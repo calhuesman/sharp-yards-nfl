@@ -2882,7 +2882,7 @@ const oddsMap = {
   perfect: {yes:1200},
   hothand: {yes:130},
   starpower: {yes:-170, no:250},
-  yearmix: {yes:-300, no:250}
+  yearmix: {yes:-135, no:115} // redesigned: "4+ different seasons in your 5" (~55%) vs "3 or fewer" (~45%) — the old "2+ different" condition hit 99.9% of the time and could be spammed for free profit
 };
 // Adaptive difficulty: refreshed on the same 4-hour cadence as the Total Score
 // line above. If your bankroll has been exploding this window, payouts get
@@ -3068,11 +3068,11 @@ function renderBettingScreen(){
       ${stakeInputBlock('starpower')}
     </div>
 
-    <h3>Multi-Year Mix <span class="muted" style="font-weight:400;">(pure luck of the draw)</span></h3>
-    <p class="muted" style="margin-top:-6px;">516 player-seasons span six NFL years (2020-2025). Will your hand of 5 cross multiple years, or land all in one?</p>
+    <h3>Season Spread <span class="muted" style="font-weight:400;">(pure luck of the draw)</span></h3>
+    <p class="muted" style="margin-top:-6px;">516 player-seasons span six NFL years (2020-2025). Will your hand of 5 spread across most of them, or stay bunched up?</p>
     <div class="bet-row">
-      <label class="bet-option"><span><input type="radio" name="bet-yearmix" value="yes"> 2+ different years get drawn</span><span class="odds">${oddsText(oddsMap.yearmix.yes)}</span></label>
-      <label class="bet-option"><span><input type="radio" name="bet-yearmix" value="no"> All 5 land in the same year</span><span class="odds">${oddsText(oddsMap.yearmix.no)}</span></label>
+      <label class="bet-option"><span><input type="radio" name="bet-yearmix" value="yes"> 4+ different years get drawn</span><span class="odds">${oddsText(oddsMap.yearmix.yes)}</span></label>
+      <label class="bet-option"><span><input type="radio" name="bet-yearmix" value="no"> 3 or fewer different years</span><span class="odds">${oddsText(oddsMap.yearmix.no)}</span></label>
       <label class="bet-option"><span><input type="radio" name="bet-yearmix" value="none" checked> No bet</span><span class="odds">—</span></label>
       ${stakeInputBlock('yearmix')}
     </div>
@@ -3780,9 +3780,9 @@ async function finishGame(){
   }
   if(bets.yearmix){
     const yearsSeen = new Set(roundPlayers.map(p=>p.year));
-    const isMixed = yearsSeen.size > 1;
-    const won = bets.yearmix.choice === "yes" ? isMixed : !isMixed;
-    resolve("yearmix", bets.yearmix.choice === "yes" ? "Multi-Year Mix: 2+ years drawn" : "Multi-Year Mix: all one year", won);
+    const isSpread = yearsSeen.size >= 4;
+    const won = bets.yearmix.choice === "yes" ? isSpread : !isSpread;
+    resolve("yearmix", bets.yearmix.choice === "yes" ? "Season Spread: 4+ years drawn" : "Season Spread: 3 or fewer", won);
   }
   if(bets.perfect){
     resolve("perfect", "Perfect Guess (any round)", hasPerfect);
