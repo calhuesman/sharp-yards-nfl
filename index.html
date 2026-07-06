@@ -782,7 +782,7 @@
     <div id="shopFlairList"></div>
 
     <div class="tier-label rare">Rare</div>
-    <p class="muted" style="margin-top:0;">Money-only tools bought at bet time — <strong>Insurance</strong> ($200, refunds part of a losing game), <strong>VIP Payouts</strong> ($300, +15% on winning bets), and <strong>Double Down</strong> ($150, doubles every bet payout — wins AND losses). None of these touch your accuracy or Best Score.</p>
+    <p class="muted" style="margin-top:0;">Money-only tools bought at bet time — <strong>Insurance</strong> ($200, refunds part of a losing game) and <strong>VIP Payouts</strong> ($300, +15% on winning bets). Neither touches your accuracy or Best Score.</p>
     <h3 style="margin-top:14px;">Mystery Box <span class="muted" style="font-weight:400;">(guaranteed cosmetic)</span></h3>
     <div id="shopMysteryBox"></div>
     <h3 style="margin-top:14px;">Color Themes <span class="muted" style="font-weight:400;">(cosmetic)</span></h3>
@@ -1592,15 +1592,13 @@ let leaderboardReturnScreen = 'screen-home';
 let editingExistingName = false;
 let gameBoosted = false;      // true if a shop gameplay tool that affects accuracy was used this game
 let insuranceActive = false;  // refunds part of net bet losses — doesn't touch accuracy, always counts
-let lastBetsUsed = null;      // {picks:[{cat,choice,stake}], insurance, vip, doubleDown} — for the "Repeat Last Bet" button
+let lastBetsUsed = null;      // {picks:[{cat,choice,stake}], insurance, vip} — for the "Repeat Last Bet" button
 let vipActive = false;        // boosts winning payouts — doesn't touch accuracy, always counts
-let doubleDownActive = false; // doubles both wins AND losses on placed bets — pure risk, doesn't touch accuracy
 const REROLL_COST = 150;
 const INSURANCE_COST = 200;
 const INSURANCE_REFUND_PCT = 0.25;
 const VIP_COST = 300;
 const VIP_PAYOUT_MULT = 1.15;
-const DOUBLE_DOWN_COST = 150;
 // Caps how much of your bankroll can go on any single bet. Without this, one favorable
 // bet at generous odds lets a good player double or triple their bankroll every single
 // game — which is exactly the "$5M in 7 games" exploit this is here to prevent.
@@ -2502,7 +2500,7 @@ const TUTORIAL_SLIDES = [
   },
   {
     title: "🛍️ The Shop",
-    body: "Spend your bankroll on cosmetics (flair, themes) or gameplay tools — Re-roll swaps a player you don't like, Scout Report gives a hint, Insurance/VIP/Double Down change your betting risk. Tools that touch your accuracy get flagged so they never count toward your official Best Score."
+    body: "Spend your bankroll on cosmetics (flair, themes) or gameplay tools — Re-roll swaps a player you don't like, Scout Report gives a hint, Insurance/VIP change your betting risk. Tools that touch your accuracy get flagged so they never count toward your official Best Score."
   },
   {
     title: "🏆 Climb the ranks",
@@ -2649,7 +2647,6 @@ const ACHIEVEMENT_DEFS = [
   {id:'scout_25', tier:'bronze', icon:'🔎', name:'Detective', desc:'Use Scout Report 25 times (lifetime)', reward:200},
 
   // --- Risk & collection ---
-  {id:'double_down_win', tier:'bronze', icon:'🎲', name:'Risk Taker', desc:'Win a bet with Double Down active', reward:150},
   {id:'flair_collector', tier:'silver', icon:'👔', name:'Fashion Icon', desc:'Own every common-tier flair', reward:400},
   {id:'theme_collector', tier:'silver', icon:'🎨', name:'Interior Designer', desc:'Own every rare-tier theme', reward:400},
 
@@ -2879,14 +2876,37 @@ const STAR_NAMES = new Set([
 ]);
 
 const oddsMap = {
-  total: {comfortable:-130, sharp:170, elite:450},
-  closest: {under100:-400, under20:120},
-  worst: {under350:-300, under150:180},
-  perfect: {yes:1500},
-  hothand: {yes:150},
-  starpower: {yes:-150, no:220},
-  yearmix: {yes:-400, no:280}
+  total: {comfortable:-150, sharp:140, elite:380},
+  closest: {under70:-220, under15:100},
+  worst: {under250:-160, under110:140},
+  perfect: {yes:1200},
+  hothand: {yes:130},
+  starpower: {yes:-170, no:250},
+  yearmix: {yes:-300, no:250}
 };
+// Adaptive difficulty: refreshed on the same 4-hour cadence as the Total Score
+// line above. If your bankroll has been exploding this window, payouts get
+// throttled for the rest of it — this is the direct fix for one player
+// snowballing from $1,000 to $25M in a single sitting by stacking several bets
+// that were each individually a bit too easy to win. If you've been struggling,
+// you get a small boost back instead. Doesn't touch the odds shown or your
+// stake — only scales the PROFIT on a win, invisibly, so it can't be gamed by
+// checking the numbers beforehand.
+function getDifficultyMultiplier(){
+  const windowKey = currentLineWindow();
+  if(profile.difficultyWindowKey !== windowKey){
+    profile.difficultyWindowKey = windowKey;
+    profile.difficultyWindowStartBankroll = profile.bankroll;
+    saveInBackground(saveProfile);
+  }
+  const startBankroll = profile.difficultyWindowStartBankroll || profile.bankroll;
+  const growthRatio = profile.bankroll / Math.max(startBankroll, 1);
+  if(growthRatio >= 3) return 0.5;
+  if(growthRatio >= 1.75) return 0.7;
+  if(growthRatio <= 0.5) return 1.25;
+  if(growthRatio <= 0.75) return 1.1;
+  return 1.0;
+}
 
 let currentTotalLines = null;
 
@@ -2949,7 +2969,6 @@ function goToBetting(){
   gameBoosted = false;
   insuranceActive = false;
   vipActive = false;
-  doubleDownActive = false;
   renderBettingScreen();
   renderRepeatBetSlot();
   refreshHeader('Bankroll', fmtMoney(profile.bankroll));
@@ -2965,7 +2984,7 @@ function renderRepeatBetSlot(){
     return;
   }
   const summary = lastBetsUsed.picks.map(p=>p.cat).join(', ') +
-    (lastBetsUsed.insurance ? ', insurance' : '') + (lastBetsUsed.vip ? ', VIP' : '') + (lastBetsUsed.doubleDown ? ', double down' : '');
+    (lastBetsUsed.insurance ? ', insurance' : '') + (lastBetsUsed.vip ? ', VIP' : '');
   slot.innerHTML = `<button class="btn secondary" onclick="repeatLastBet()">🔁 Repeat Last Bet <span class="muted">(${summary})</span></button>`;
 }
 
@@ -2983,7 +3002,6 @@ function repeatLastBet(){
   });
   document.getElementById('insuranceCheckbox').checked = lastBetsUsed.insurance;
   document.getElementById('vipCheckbox').checked = lastBetsUsed.vip;
-  document.getElementById('doubleDownCheckbox').checked = !!lastBetsUsed.doubleDown;
   updateStakeTracker();
   showToast('Last bet slip restored!');
 }
@@ -3019,8 +3037,8 @@ function renderBettingScreen(){
     <h3>Best Round — Under (your single closest guess)</h3>
     <p class="muted" style="margin-top:-6px;">You only need ONE of your 5 guesses to land this — priced accordingly. QB rounds count on a scaled-down basis here (their yardage runs much bigger), so a QB miss doesn't tank this bet unfairly.</p>
     <div class="bet-row">
-      <label class="bet-option"><span><input type="radio" name="bet-closest" value="under100"> Best round under 100 yds off</span><span class="odds">${oddsText(oddsMap.closest.under100)}</span></label>
-      <label class="bet-option"><span><input type="radio" name="bet-closest" value="under20"> Best round under 20 yds off</span><span class="odds">${oddsText(oddsMap.closest.under20)}</span></label>
+      <label class="bet-option"><span><input type="radio" name="bet-closest" value="under70"> Best round under 70 yds off</span><span class="odds">${oddsText(oddsMap.closest.under70)}</span></label>
+      <label class="bet-option"><span><input type="radio" name="bet-closest" value="under15"> Best round under 15 yds off</span><span class="odds">${oddsText(oddsMap.closest.under15)}</span></label>
       <label class="bet-option"><span><input type="radio" name="bet-closest" value="none" checked> No bet</span><span class="odds">—</span></label>
       ${stakeInputBlock('closest')}
     </div>
@@ -3028,15 +3046,15 @@ function renderBettingScreen(){
     <h3>Consistency — Worst Round Still Under</h3>
     <p class="muted" style="margin-top:-6px;">Rewards a clean sheet — your <em>worst</em> guess has to stay under the line. QB rounds count on a scaled-down basis (their yardage runs much bigger), so drawing a QB doesn't automatically wreck this bet.</p>
     <div class="bet-row">
-      <label class="bet-option"><span><input type="radio" name="bet-worst" value="under350"> Worst round under 350 yds off</span><span class="odds">${oddsText(oddsMap.worst.under350)}</span></label>
-      <label class="bet-option"><span><input type="radio" name="bet-worst" value="under150"> Worst round under 150 yds off</span><span class="odds">${oddsText(oddsMap.worst.under150)}</span></label>
+      <label class="bet-option"><span><input type="radio" name="bet-worst" value="under250"> Worst round under 250 yds off</span><span class="odds">${oddsText(oddsMap.worst.under250)}</span></label>
+      <label class="bet-option"><span><input type="radio" name="bet-worst" value="under110"> Worst round under 110 yds off</span><span class="odds">${oddsText(oddsMap.worst.under110)}</span></label>
       <label class="bet-option"><span><input type="radio" name="bet-worst" value="none" checked> No bet</span><span class="odds">—</span></label>
       ${stakeInputBlock('worst')}
     </div>
 
     <h3>Hot Hand</h3>
     <div class="bet-row">
-      <label class="bet-option"><span><input type="radio" name="bet-hothand" value="yes">3+ of your 5 rounds land under 75 yds off</span><span class="odds">${oddsText(oddsMap.hothand.yes)}</span></label>
+      <label class="bet-option"><span><input type="radio" name="bet-hothand" value="yes">3+ of your 5 rounds land under 55 yds off</span><span class="odds">${oddsText(oddsMap.hothand.yes)}</span></label>
       <label class="bet-option"><span><input type="radio" name="bet-hothand" value="none" checked> No bet</span><span class="odds">—</span></label>
       ${stakeInputBlock('hothand')}
     </div>
@@ -3084,15 +3102,6 @@ function renderBettingScreen(){
       <span class="odds">$${VIP_COST}</span>
     </div>
 
-    <h3>🎲 Double Down <span class="muted" style="font-weight:400;">(from the Shop — pure risk, never affects Best Score)</span></h3>
-    <p class="muted" style="margin-top:-6px;">Doubles every bet payout this game — wins AND losses. High risk, high reward.</p>
-    <div class="boost-row">
-      <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-        <input type="checkbox" id="doubleDownCheckbox"> Double down for this game
-      </label>
-      <span class="odds">$${DOUBLE_DOWN_COST}</span>
-    </div>
-
     <div class="tracker" id="totalPayoutBox" style="margin-top:16px;">
       <div class="tracker-row"><span class="label">If Every Bet Above Hits</span></div>
       <div class="muted" id="totalPayoutText" style="text-align:center; margin-top:4px;">Place a bet to see your max possible bankroll this round.</div>
@@ -3101,7 +3110,6 @@ function renderBettingScreen(){
 
   document.getElementById('insuranceCheckbox').addEventListener('change', updateStakeTracker);
   document.getElementById('vipCheckbox').addEventListener('change', updateStakeTracker);
-  document.getElementById('doubleDownCheckbox').addEventListener('change', updateStakeTracker);
 
   const cats = ["total","closest","worst","hothand","starpower","yearmix","perfect"];
   cats.forEach(cat=>{
@@ -3125,7 +3133,6 @@ function updateStakeTracker(){
   let overCap = false;
   const cap = maxStakeAllowed();
   const vipOn = document.getElementById('vipCheckbox')?.checked;
-  const ddOn = document.getElementById('doubleDownCheckbox')?.checked;
   let totalPotentialProfit = 0;
   let betStakesOnly = 0;
   let anyBetPlaced = false;
@@ -3144,7 +3151,6 @@ function updateStakeTracker(){
         const odds = oddsMap[cat][choice];
         let profit = americanPayout(val, odds);
         if(vipOn) profit *= VIP_PAYOUT_MULT;
-        if(ddOn) profit *= 2;
         if(previewEl){
           previewEl.textContent = `If this hits: +${fmtMoney(profit)} (total back: ${fmtMoney(val+profit)})`;
         }
@@ -3163,8 +3169,6 @@ function updateStakeTracker(){
   if(insBox && insBox.checked) staked += INSURANCE_COST;
   const vipBox = document.getElementById('vipCheckbox');
   if(vipBox && vipBox.checked) staked += VIP_COST;
-  const ddBox = document.getElementById('doubleDownCheckbox');
-  if(ddBox && ddBox.checked) staked += DOUBLE_DOWN_COST;
   const remaining = profile.bankroll - staked;
   document.getElementById('trkBankroll').textContent = fmtMoney(profile.bankroll);
   document.getElementById('trkStaked').textContent = fmtMoney(staked);
@@ -3235,10 +3239,8 @@ function confirmBets(){
 
   const insuranceChecked = document.getElementById('insuranceCheckbox').checked;
   const vipChecked = document.getElementById('vipCheckbox').checked;
-  const doubleDownChecked = document.getElementById('doubleDownCheckbox').checked;
   if(insuranceChecked) totalStake += INSURANCE_COST;
   if(vipChecked) totalStake += VIP_COST;
-  if(doubleDownChecked) totalStake += DOUBLE_DOWN_COST;
 
   if(totalStake > profile.bankroll){
     document.getElementById('betError').textContent = `Your total stakes (${fmtMoney(totalStake)}) exceed your bankroll (${fmtMoney(profile.bankroll)}).`;
@@ -3248,7 +3250,6 @@ function confirmBets(){
 
   insuranceActive = insuranceChecked;
   vipActive = vipChecked;
-  doubleDownActive = doubleDownChecked;
   // Deduct EVERYTHING staked (bets + tools) the moment bets lock in, so the bankroll
   // shown during the round reflects money actually at risk. It gets added back at
   // the end of the round for anything that wins (see finishGame's totalReturn).
@@ -3266,8 +3267,7 @@ function confirmBets(){
     lastBetsUsed = {
       picks: picksThisRound,
       insurance: insuranceChecked,
-      vip: vipChecked,
-      doubleDown: doubleDownChecked
+      vip: vipChecked
     };
   }
 
@@ -3735,6 +3735,7 @@ async function finishGame(){
   let totalWagered = 0;
   let totalWon = 0;
 
+  const difficultyMult = getDifficultyMultiplier();
   function resolve(cat, label, won){
     if(!bets[cat]) return;
     const b = bets[cat];
@@ -3742,20 +3743,13 @@ async function finishGame(){
     if(won){
       let profit = americanPayout(b.stake, b.odds);
       if(vipActive) profit *= VIP_PAYOUT_MULT;
-      if(doubleDownActive) profit *= 2;
+      profit *= difficultyMult;
       totalReturn += (b.stake + profit); // give the stake back plus profit
       totalWon += profit;
-      if(doubleDownActive) unlockAchievement('double_down_win');
-      results.push({label, staked: b.stake, outcome:"win", detail:`+${fmtMoney(profit)} (odds ${b.odds>0?'+':''}${b.odds}${vipActive?' · VIP':''}${doubleDownActive?' · 2x':''})`});
+      results.push({label, staked: b.stake, outcome:"win", detail:`+${fmtMoney(profit)} (odds ${b.odds>0?'+':''}${b.odds}${vipActive?' · VIP':''})`});
     } else {
       let loss = b.stake;
-      if(doubleDownActive){
-        loss *= 2;
-        // Only the base stake was pre-deducted when bets locked in — Double Down's
-        // extra loss on top of that has to come out now.
-        totalReturn -= (loss - b.stake);
-      }
-      results.push({label, staked: b.stake, outcome:"lose", detail:`-${fmtMoney(loss)}${doubleDownActive?' (2x)':''}`});
+      results.push({label, staked: b.stake, outcome:"lose", detail:`-${fmtMoney(loss)}`});
     }
   }
 
@@ -3766,17 +3760,17 @@ async function finishGame(){
   }
   if(bets.closest){
     const c = bets.closest.choice;
-    const line = c === "under100" ? 100 : 20;
+    const line = c === "under70" ? 70 : 15;
     resolve("closest", `Best Round Under ${line} yds`, closest < line);
   }
   if(bets.worst){
     const c = bets.worst.choice;
-    const line = c === "under350" ? 350 : 150;
+    const line = c === "under250" ? 250 : 110;
     resolve("worst", `Worst Round Under ${line} yds`, furthest < line);
   }
   if(bets.hothand){
-    const hotCount = guesses.filter(g=>effectiveDiff(g) < 75).length;
-    resolve("hothand", `Hot Hand (3+ rounds under 75 yds — you had ${hotCount})`, hotCount >= 3);
+    const hotCount = guesses.filter(g=>effectiveDiff(g) < 55).length;
+    resolve("hothand", `Hot Hand (3+ rounds under 55 yds — you had ${hotCount})`, hotCount >= 3);
   }
   const starCountThisGame = roundPlayers.filter(p=>STAR_NAMES.has(p.name)).length;
   if(bets.starpower){
@@ -3870,7 +3864,6 @@ async function finishGame(){
   const toolLines = [];
   if(insuranceActive) toolLines.push(`🛡️ Insurance <span class="muted">(-$${INSURANCE_COST})</span>`);
   if(vipActive) toolLines.push(`⭐ VIP Payouts <span class="muted">(-$${VIP_COST})</span>`);
-  if(doubleDownActive) toolLines.push(`🎲 Double Down <span class="muted">(-$${DOUBLE_DOWN_COST})</span>`);
   if(rerollsUsedThisGame > 0) toolLines.push(`🔄 Re-roll ×${rerollsUsedThisGame} <span class="muted">(-${fmtMoney(rerollsUsedThisGame*REROLL_COST)})</span>`);
   if(scoutsUsedThisGame > 0) toolLines.push(`🔎 Scout Report ×${scoutsUsedThisGame} <span class="muted">(-${fmtMoney(scoutsUsedThisGame*SCOUT_COST)})</span>`);
   document.getElementById('toolsSummary').innerHTML = toolLines.length === 0 ? '' :
