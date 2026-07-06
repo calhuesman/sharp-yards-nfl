@@ -593,6 +593,26 @@
     <div class="hint" id="authError"></div>
     <button class="btn" id="authSubmitBtn" onclick="submitAuth()">Create Account →</button>
     <button class="btn ghost" id="authToggleBtn" onclick="toggleAuthMode()">Already have an account? Log in</button>
+    <button class="btn ghost" id="forgotPasswordLink" onclick="showForgotPassword()" style="display:none;">Forgot password?</button>
+  </div>
+
+  <!-- SCREEN: FORGOT PASSWORD (request reset email) -->
+  <div id="screen-forgot-password" class="card hidden">
+    <h2>🔑 Reset Your Password</h2>
+    <p class="muted">Enter the email you signed up with — we'll send a link to reset your password.</p>
+    <input type="email" id="forgotEmail" placeholder="Email" autocomplete="email">
+    <div class="hint" id="forgotError"></div>
+    <button class="btn" id="forgotSubmitBtn" onclick="submitForgotPassword()">Send Reset Link →</button>
+    <button class="btn ghost" onclick="renderAuthMode(); show('screen-auth');">← Back to Login</button>
+  </div>
+
+  <!-- SCREEN: SET NEW PASSWORD (after clicking the emailed reset link) -->
+  <div id="screen-new-password" class="card hidden">
+    <h2>🔑 Set a New Password</h2>
+    <p class="muted">Choose a new password for your account.</p>
+    <input type="password" id="newPassword" placeholder="New password (6+ characters)" autocomplete="new-password">
+    <div class="hint" id="newPasswordError"></div>
+    <button class="btn" id="newPasswordSubmitBtn" onclick="submitNewPassword()">Update Password →</button>
   </div>
 
   <!-- SCREEN: HOME -->
@@ -610,6 +630,7 @@
       <strong>How it works:</strong> Each round reveals a real NFL skill-position player from a season between 2020 and 2025 — you'll see which year right before the reveal. You guess their season yardage total (rushing / receiving / passing). Score = how far off you were. Lower total across 5 rounds is better. 516 real player-seasons in the pool, no repeats until everyone's been used, max 1 QB per game, 8 seconds per guess.
     </div>
     <button class="btn" onclick="goToBetting()">▶ Start a Game</button>
+    <button class="btn secondary" id="dailyChallengeBtn" onclick="showDailyChallenge()" style="border-color:var(--gold); color:var(--gold);">📅 Daily Challenge</button>
     <div class="btn-row">
       <button class="btn secondary" onclick="showLeaderboard()">🏆 Leaderboard</button>
       <button class="btn secondary" onclick="showShop()">🛍️ Shop</button>
@@ -796,17 +817,28 @@
     <p class="muted">Pure bragging rights — same 5 players, whoever's total is lower wins. Doesn't touch your bankroll, achievements, or the main leaderboard.</p>
     <div id="duelOverallRecord" style="margin-bottom:10px;"></div>
 
-    <h3 style="margin-top:14px;">Play Anyone</h3>
+    <h3 style="margin-top:14px;">Play Anyone <span class="muted" style="font-weight:400;">(random match, default settings)</span></h3>
     <div id="duelQueueBox"></div>
 
-    <h3 style="margin-top:14px;">Challenge a Friend</h3>
-    <div id="duelChallengeRow" style="display:flex; gap:8px; margin-bottom:8px;">
-      <select id="duelFriendSelect" style="flex:1; padding:12px; border-radius:10px; border:1px solid var(--border); background:#0e131c; color:var(--text); margin-top:0;"></select>
-      <button class="btn" style="width:auto; padding:0 16px;" onclick="challengeFriend()">Challenge</button>
+    <h3 style="margin-top:14px;">Play Friends <span class="muted" style="font-weight:400;">(up to 4 players, your rules)</span></h3>
+    <div id="duelFriendChecks" style="margin-bottom:6px;"></div>
+    <p class="muted" id="duelNoFriendsNote" style="display:none;">Add friends from the Leaderboard's Friends tab first — that's who you can invite.</p>
+    <div id="duelCustomSettings" style="display:none;">
+      <div class="muted" style="font-size:0.78rem; margin-bottom:4px;">Seasons to draw from (default: all checked)</div>
+      <div id="duelYearChecks" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;"></div>
+      <div class="muted" style="font-size:0.78rem; margin-bottom:4px;">Seconds per round</div>
+      <select id="duelTimerSelect" style="width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:#0e131c; color:var(--text); margin-bottom:10px; margin-top:0;">
+        <option value="5">5 seconds</option>
+        <option value="8" selected>8 seconds (default)</option>
+        <option value="10">10 seconds</option>
+        <option value="15">15 seconds</option>
+        <option value="20">20 seconds</option>
+      </select>
+      <button class="btn" onclick="sendGroupInvites()">Send Invites</button>
     </div>
-    <p class="muted" id="duelNoFriendsNote" style="display:none;">Add friends from the Leaderboard's Friends tab first — that's who you can challenge.</p>
 
     <div id="duelIncoming"></div>
+    <div id="duelHosting"></div>
     <div id="duelActive"></div>
     <div id="duelHistory"></div>
 
@@ -818,6 +850,25 @@
     <h2 style="margin-top:0;">⚔️ Duel Result</h2>
     <div id="duelResultContent"></div>
     <button class="btn" onclick="showDuelHub()">← Back to Head-to-Head</button>
+  </div>
+
+  <!-- SCREEN: DAILY CHALLENGE -->
+  <div id="screen-daily" class="card hidden">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <h2 style="margin:0;">📅 Daily Challenge</h2>
+      <button class="close-x" onclick="goHome()" aria-label="Close">✕</button>
+    </div>
+    <p class="muted">Same 5 players for everyone today, worldwide. No bets, no bankroll risk — just bragging rights and a streak to protect. Resets at midnight UTC.</p>
+    <div id="dailyStreakBox" style="margin-bottom:10px;"></div>
+    <div id="dailyContent"></div>
+    <button class="btn ghost" onclick="goHome()">← Back to Home</button>
+  </div>
+
+  <!-- SCREEN: DAILY CHALLENGE RESULT -->
+  <div id="screen-daily-result" class="card hidden">
+    <h2 style="margin-top:0;">📅 Today's Result</h2>
+    <div id="dailyResultContent"></div>
+    <button class="btn" onclick="showDailyChallenge()">← Back to Daily Challenge</button>
   </div>
 
   <!-- SCREEN: ADMIN PANEL (owner-only) -->
@@ -1619,7 +1670,7 @@ function fireConfetti(){
   }
 }
 function show(id){
-  ["screen-loading","screen-auth","screen-home","screen-betting","screen-year-reveal","screen-round","screen-result","screen-final","screen-leaderboard","screen-shop","screen-achievements","screen-rank-ladder","screen-tutorial","screen-duel","screen-duel-result","screen-admin"].forEach(s=>{
+  ["screen-loading","screen-auth","screen-home","screen-betting","screen-year-reveal","screen-round","screen-result","screen-final","screen-leaderboard","screen-shop","screen-achievements","screen-rank-ladder","screen-tutorial","screen-duel","screen-duel-result","screen-admin","screen-daily","screen-daily-result","screen-forgot-password","screen-new-password"].forEach(s=>{
     document.getElementById(s).classList.toggle("hidden", s !== id);
   });
   const showChrome = id !== 'screen-loading' && id !== 'screen-auth' && id !== 'screen-tutorial';
@@ -2286,6 +2337,7 @@ function renderAuthMode(){
   document.getElementById('authSignupFields').style.display = isSignup ? 'block' : 'none';
   document.getElementById('authSubmitBtn').textContent = isSignup ? 'Create Account →' : 'Log In →';
   document.getElementById('authToggleBtn').textContent = isSignup ? 'Already have an account? Log in' : "New here? Create an account";
+  document.getElementById('forgotPasswordLink').style.display = isSignup ? 'none' : 'block';
   document.getElementById('authError').textContent = '';
 }
 async function submitAuth(){
@@ -2346,6 +2398,70 @@ async function submitAuth(){
   btn.textContent = originalText;
   await init();
 }
+
+// ---------- FORGOT PASSWORD ----------
+function showForgotPassword(){
+  document.getElementById('forgotEmail').value = '';
+  const errEl = document.getElementById('forgotError');
+  errEl.textContent = '';
+  errEl.style.color = '';
+  show('screen-forgot-password');
+}
+
+async function submitForgotPassword(){
+  const email = document.getElementById('forgotEmail').value.trim();
+  const errEl = document.getElementById('forgotError');
+  errEl.style.color = '';
+  errEl.textContent = '';
+  if(!email){
+    errEl.textContent = 'Enter your email.';
+    return;
+  }
+  const btn = document.getElementById('forgotSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname
+  });
+  btn.disabled = false;
+  btn.textContent = 'Send Reset Link →';
+  if(error){
+    errEl.textContent = error.message;
+    return;
+  }
+  errEl.style.color = 'var(--green)';
+  errEl.textContent = "Check your email for a reset link — it may take a minute to arrive. Clicking it will bring you back here to set a new password.";
+}
+
+async function submitNewPassword(){
+  const newPass = document.getElementById('newPassword').value;
+  const errEl = document.getElementById('newPasswordError');
+  errEl.textContent = '';
+  if(!newPass || newPass.length < 6){
+    errEl.textContent = 'Password needs to be at least 6 characters.';
+    return;
+  }
+  const btn = document.getElementById('newPasswordSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Updating…';
+  const { error } = await sb.auth.updateUser({ password: newPass });
+  btn.disabled = false;
+  btn.textContent = 'Update Password →';
+  if(error){
+    errEl.textContent = error.message;
+    return;
+  }
+  showToast('Password updated!');
+  window.history.replaceState({}, '', window.location.pathname);
+  init();
+}
+
+sb.auth.onAuthStateChange((event, session) => {
+  if(event === 'PASSWORD_RECOVERY'){
+    show('screen-new-password');
+  }
+});
+
 async function logOut(){
   await sb.auth.signOut();
   profile = null;
@@ -2541,7 +2657,13 @@ const ACHIEVEMENT_DEFS = [
   {id:'duel_first_win', tier:'bronze', icon:'⚔️', name:'First Blood (Duel)', desc:'Win your first Head-to-Head duel', reward:100},
   {id:'duel_wins_5', tier:'silver', icon:'⚔️', name:'Duelist', desc:'Win 5 Head-to-Head duels', reward:300},
   {id:'duel_wins_20', tier:'gold', icon:'⚔️', name:'Gladiator', desc:'Win 20 Head-to-Head duels', reward:750},
-  {id:'duel_wins_50', tier:'platinum', icon:'⚔️', name:'Warlord', desc:'Win 50 Head-to-Head duels', reward:2000}
+  {id:'duel_wins_50', tier:'platinum', icon:'⚔️', name:'Warlord', desc:'Win 50 Head-to-Head duels', reward:2000},
+  {id:'daily_first', tier:'starter', icon:'📅', name:'Creature of Habit', desc:'Play your first Daily Challenge', reward:50},
+  {id:'daily_streak_3', tier:'bronze', icon:'📅', name:'On a Roll', desc:'3-day Daily Challenge streak', reward:200},
+  {id:'daily_streak_7', tier:'silver', icon:'📅', name:'Week Warrior', desc:'7-day Daily Challenge streak', reward:500},
+  {id:'daily_streak_30', tier:'gold', icon:'📅', name:'Creature Habit-ual', desc:'30-day Daily Challenge streak', reward:2500},
+  {id:'daily_perfect', tier:'silver', icon:'🎯', name:'Perfect Day', desc:'Nail a perfect guess in a Daily Challenge', reward:400},
+  {id:'daily_top3', tier:'gold', icon:'🏅', name:'Podium Finish', desc:"Finish top 3 on a day's Daily Challenge leaderboard", reward:600}
 ];
 
 function unlockAchievement(id){
@@ -3260,7 +3382,7 @@ function proceedToPlayer(){
 
 function displayCurrentPlayer(){
   const p = roundPlayers[currentRound];
-  refreshHeader('Round', duelMode ? `⚔️ Duel ${currentRound+1} / 5` : `${currentRound+1} / 5`);
+  refreshHeader('Round', duelMode ? `⚔️ Duel ${currentRound+1} / 5` : dailyMode ? `📅 Daily ${currentRound+1} / 5` : `${currentRound+1} / 5`);
   document.getElementById('posBadge').textContent = p.pos;
   document.getElementById('roundYearBadge').textContent = p.year;
   document.getElementById('teamLabel').textContent = p.team;
@@ -3280,12 +3402,15 @@ function displayCurrentPlayer(){
   const rerollBtn = document.getElementById('rerollBtn');
   const scoutBtn = document.getElementById('scoutBtn');
 
-  if(duelMode){
-    // Duels don't touch bankroll at all, so the money-based tools stay off the table.
+  if(duelMode || dailyMode){
+    // Duels and the Daily Challenge don't touch bankroll at all — everyone gets
+    // the exact same 5 players, so money-based tools that change what you see
+    // stay off the table to keep it a fair, even comparison.
+    const label = duelMode ? 'duels' : "today's challenge";
     rerollBtn.disabled = true;
-    rerollBtn.textContent = `🔄 Re-roll — not available in duels`;
+    rerollBtn.textContent = `🔄 Re-roll — not available in ${label}`;
     scoutBtn.disabled = true;
-    scoutBtn.textContent = `🔎 Scout Report — not available in duels`;
+    scoutBtn.textContent = `🔎 Scout Report — not available in ${label}`;
     document.getElementById('scoutHintBox').classList.add('hidden');
     return;
   }
@@ -3423,7 +3548,7 @@ function startTimer(){
   clearInterval(timerInterval);
   roundActive = true;
   timerPaused = false;
-  timerTotal = ROUND_SECONDS;
+  timerTotal = (duelMode && currentDuelTimerSeconds) ? currentDuelTimerSeconds : ROUND_SECONDS;
   timerTimeLeft = timerTotal;
   document.getElementById('timerDisplay').textContent = timerTimeLeft;
   document.getElementById('timerBar').style.width = "100%";
@@ -3561,6 +3686,11 @@ function nextRound(){
       finishDuelGame().catch(err=>{
         console.error('finishDuelGame failed', err);
         showToast("Something went wrong wrapping up the duel.", true);
+      });
+    } else if(dailyMode){
+      finishDailyChallenge().catch(err=>{
+        console.error('finishDailyChallenge failed', err);
+        showToast("Something went wrong wrapping up today's challenge.", true);
       });
     } else {
       finishGame().catch(err=>{
@@ -3946,21 +4076,27 @@ async function deleteAccount(id, username){
 // banner on Home + live updates via Supabase Realtime) — there's no push/email/
 // SMS here, so a friend only sees a challenge once they open the app themselves.
 let duelMode = false;
+let dailyMode = false;
 let currentDuelId = null;
 let duelChannel = null;
 let waitingOnDuelId = null; // set while sitting on the "waiting for opponent" result screen
+let currentDuelTimerSeconds = null; // set by playDuelRound() from that lobby's custom setting
 
-function drawDuelDeck(){
+function drawDuelDeck(yearsFilter){
   // Same weighted-by-year, max-1-QB logic as a real game, but drawing into a
-  // brand new standalone 5-player set rather than touching the main deck.
+  // brand new standalone 5-player set rather than touching the main deck. If
+  // yearsFilter is given (a non-empty array of year ints), only draw from
+  // those specific seasons, picked uniformly among them — weighting only
+  // makes sense across the FULL default set, not an arbitrary custom subset.
   const drawn = [];
   let qbCount = 0;
   let safety = 0;
-  const allYears = Object.keys(YEAR_DRAW_WEIGHTS);
+  const useCustom = yearsFilter && yearsFilter.length > 0;
+  const allYears = useCustom ? yearsFilter.map(String) : Object.keys(YEAR_DRAW_WEIGHTS);
   const usedNames = new Set();
   while(drawn.length < 5 && safety < 2000){
     safety++;
-    const chosenYear = pickWeightedYear(allYears);
+    const chosenYear = useCustom ? allYears[Math.floor(Math.random()*allYears.length)] : pickWeightedYear(allYears);
     const pool = PLAYERS.filter(p => String(p.year) === chosenYear && !usedNames.has(playerKey(p)));
     if(pool.length === 0) continue;
     const player = pool[Math.floor(Math.random()*pool.length)];
@@ -3972,56 +4108,76 @@ function drawDuelDeck(){
   return drawn;
 }
 
+// Duels I'm part of, each with its full player list attached (so the UI can
+// show everyone in a lobby, not just "me vs one other person").
 async function fetchMyDuels(){
-  const { data, error } = await sb.from('duels')
-    .select('*')
-    .or(`challenger.eq.${profile.username},opponent.eq.${profile.username}`)
-    .order('created_at', { ascending: false })
-    .limit(30);
-  if(error || !data) return [];
-  return data;
+  const { data: myRows, error: myError } = await sb.from('duel_players').select('duel_id').eq('username', profile.username);
+  if(myError || !myRows || myRows.length === 0) return [];
+  const duelIds = [...new Set(myRows.map(r => r.duel_id))];
+  const { data: duels, error: duelsError } = await sb.from('duels').select('*').in('id', duelIds).order('created_at', { ascending: false }).limit(30);
+  if(duelsError || !duels) return [];
+  const { data: allPlayers } = await sb.from('duel_players').select('*').in('duel_id', duelIds);
+  const playersByDuel = {};
+  (allPlayers||[]).forEach(p => {
+    if(!playersByDuel[p.duel_id]) playersByDuel[p.duel_id] = [];
+    playersByDuel[p.duel_id].push(p);
+  });
+  return duels.map(d => ({ ...d, players: playersByDuel[d.id] || [] }));
 }
 
 // Re-checks the specific duel we're waiting on (called when a realtime update
-// comes in while sitting on the "waiting for opponent" screen) and flips the
-// screen over to the final comparison the moment the opponent's score lands.
+// comes in while sitting on the "waiting for others" screen) and flips the
+// screen over to final rankings the moment everyone else has finished.
 async function checkWaitingDuelUpdate(){
   if(!waitingOnDuelId) return;
-  const { data: duel, error } = await sb.from('duels').select('*').eq('id', waitingOnDuelId).single();
-  if(error || !duel) return;
-  const iAmChallenger = duel.challenger === profile.username;
-  const myScore = iAmChallenger ? duel.challenger_score : duel.opponent_score;
-  const otherScore = iAmChallenger ? duel.opponent_score : duel.challenger_score;
-  if(otherScore === null || otherScore === undefined) return; // still not done, keep waiting
+  const { data: playersRaw, error } = await sb.from('duel_players').select('*').eq('duel_id', waitingOnDuelId);
+  if(error || !playersRaw) return;
+  const accepted = playersRaw.filter(p => p.invite_status === 'accepted');
+  const stillWaiting = accepted.filter(p => p.score === null || p.score === undefined);
+  if(stillWaiting.length > 0) return; // someone hasn't finished yet, keep waiting
 
-  const outcome = myScore === otherScore ? 'push' : (myScore < otherScore ? 'win' : 'lose');
-  const otherName = iAmChallenger ? duel.opponent : duel.challenger;
-  profile.duelWins = profile.duelWins || 0;
-  profile.duelLosses = profile.duelLosses || 0;
-  if(outcome === 'win') profile.duelWins++;
-  if(outcome === 'lose') profile.duelLosses++;
-  if(profile.duelWins >= 1) unlockAchievement('duel_first_win');
-  if(profile.duelWins >= 5) unlockAchievement('duel_wins_5');
-  if(profile.duelWins >= 20) unlockAchievement('duel_wins_20');
-  if(profile.duelWins >= 50) unlockAchievement('duel_wins_50');
+  renderFinalDuelRankings(accepted);
+  waitingOnDuelId = null;
+}
+
+function renderFinalDuelRankings(players){
+  const sorted = [...players].sort((a,b) => Number(a.score) - Number(b.score));
+  const best = Number(sorted[0].score);
+  const myRow = sorted.find(p => p.username === profile.username);
+  const iWon = myRow && Number(myRow.score) === best;
+
+  if(iWon){
+    profile.duelWins = (profile.duelWins||0) + 1;
+    if(profile.duelWins >= 1) unlockAchievement('duel_first_win');
+    if(profile.duelWins >= 5) unlockAchievement('duel_wins_5');
+    if(profile.duelWins >= 20) unlockAchievement('duel_wins_20');
+    if(profile.duelWins >= 50) unlockAchievement('duel_wins_50');
+  } else if(myRow){
+    profile.duelLosses = (profile.duelLosses||0) + 1;
+  }
   saveInBackground(saveProfile);
 
   const content = document.getElementById('duelResultContent');
   content.innerHTML = `
-    <div class="total-final">${outcome==='win' ? '🏆 You Won!' : outcome==='lose' ? '💀 You Lost' : '🤝 Tie Game'}</div>
-    <div class="stat-grid" style="margin-top:8px;">
-      <div class="stat-box"><div class="num">${myScore}</div><div class="lbl">Your total</div></div>
-      <div class="stat-box"><div class="num">${otherScore}</div><div class="lbl">${escapeHtml(otherName)}'s total</div></div>
+    <div class="total-final">${iWon ? '🏆 You Won!' : '💀 Not This Time'}</div>
+    <div class="stat-grid" style="margin-top:8px; grid-template-columns:1fr;">
+      ${sorted.map((p,i) => `<div class="shop-item"><div class="info"><span class="emoji">${i===0?'🥇':i===1?'🥈':i===2?'🥉':'🎮'}</span><div><div class="name">${escapeHtml(p.username)}${p.username===profile.username?' (you)':''}</div></div></div><span class="badge-pill ${p.username===profile.username ? (iWon?'win':'lose') : 'push'}">${Number(p.score)} yds</span></div>`).join('')}
     </div>
   `;
-  if(outcome === 'win') celebrate(`🏆 Duel Won!<br>Beat ${otherName} ${myScore} to ${otherScore}`);
-  waitingOnDuelId = null;
+  if(iWon) celebrate(`🏆 Duel Won!<br>Best score in the group: ${best} yds`);
 }
 
 function subscribeDuelRealtime(){
   if(duelChannel) return;
   duelChannel = sb.channel('public:duels')
     .on('postgres_changes', { event:'*', schema:'public', table:'duels' }, () => {
+      renderDuelBanner();
+      const duelScreen = document.getElementById('screen-duel');
+      if(duelScreen && !duelScreen.classList.contains('hidden')){
+        showDuelHub();
+      }
+    })
+    .on('postgres_changes', { event:'*', schema:'public', table:'duel_players' }, () => {
       renderDuelBanner();
       const duelScreen = document.getElementById('screen-duel');
       if(duelScreen && !duelScreen.classList.contains('hidden')){
@@ -4057,9 +4213,8 @@ async function renderQueueBox(){
 }
 
 async function findRandomOpponent(){
-  // Atomic-ish: try to grab whoever's already been waiting longest (not me).
-  // If this returns a row, they were waiting — pair up immediately. If it
-  // returns nothing, nobody's waiting, so I join the queue myself instead.
+  // Random matches are always exactly 2 players with default settings (all
+  // years, standard timer) — no customization here, by design.
   const { data: matched, error } = await sb.from('duel_queue')
     .delete()
     .neq('username', profile.username)
@@ -4069,14 +4224,24 @@ async function findRandomOpponent(){
 
   if(matched && matched.length > 0){
     const opponentWaiting = matched[0].username;
-    const deck = drawDuelDeck();
-    const { error: duelError } = await sb.from('duels').insert({
-      challenger: opponentWaiting,
-      opponent: profile.username,
-      status: 'active', // both sides opted into random matching, so no accept step needed
-      deck
-    });
-    if(duelError){
+    const deck = drawDuelDeck(null);
+    const { data: duel, error: duelError } = await sb.from('duels').insert({
+      host: opponentWaiting,
+      status: 'active',
+      deck,
+      timer_seconds: ROUND_SECONDS,
+      years_filter: null,
+      is_random: true
+    }).select().single();
+    if(duelError || !duel){
+      showToast('Matchmaking failed — try again.', true);
+      return;
+    }
+    const { error: playersError } = await sb.from('duel_players').insert([
+      { duel_id: duel.id, username: opponentWaiting, invite_status: 'accepted' },
+      { duel_id: duel.id, username: profile.username, invite_status: 'accepted' }
+    ]);
+    if(playersError){
       showToast('Matchmaking failed — try again.', true);
       return;
     }
@@ -4103,12 +4268,26 @@ async function renderDuelBanner(){
   const el = document.getElementById('duelBanner');
   if(!el) return;
   const duels = await fetchMyDuels();
-  const incoming = duels.filter(d => d.status === 'pending' && d.opponent === profile.username);
+  const incoming = duels.filter(d => {
+    const me = d.players.find(p => p.username === profile.username);
+    return d.status === 'pending' && me && me.invite_status === 'invited';
+  });
   if(incoming.length > 0){
-    el.innerHTML = `<div class="hint center">⚔️ ${incoming.length} duel challenge${incoming.length>1?'s':''} waiting for you — <span class="link-btn" style="text-decoration:underline; cursor:pointer;" onclick="showDuelHub()">check it out</span></div>`;
+    el.innerHTML = `<div class="hint center">⚔️ ${incoming.length} duel invite${incoming.length>1?'s':''} waiting for you — <span class="link-btn" style="text-decoration:underline; cursor:pointer;" onclick="showDuelHub()">check it out</span></div>`;
   } else {
     el.innerHTML = '';
   }
+}
+
+function renderYearCheckboxes(){
+  const box = document.getElementById('duelYearChecks');
+  if(!box) return;
+  const years = Object.keys(YEAR_DRAW_WEIGHTS).sort();
+  box.innerHTML = years.map(y => `
+    <label style="display:flex; align-items:center; gap:4px; font-size:0.78rem; background:#0e131c; border:1px solid var(--border); border-radius:8px; padding:6px 10px; cursor:pointer;">
+      <input type="checkbox" class="duel-year-check" value="${y}" checked style="margin:0; width:auto;"> ${y}
+    </label>
+  `).join('');
 }
 
 async function showDuelHub(){
@@ -4116,18 +4295,24 @@ async function showDuelHub(){
   show('screen-duel');
   subscribeDuelRealtime();
   renderQueueBox();
+  renderYearCheckboxes();
 
   const friends = profile.friends || [];
-  const select = document.getElementById('duelFriendSelect');
-  const row = document.getElementById('duelChallengeRow');
+  const checkBox = document.getElementById('duelFriendChecks');
+  const settingsBox = document.getElementById('duelCustomSettings');
   const noFriendsNote = document.getElementById('duelNoFriendsNote');
   if(friends.length === 0){
-    row.classList.add('hidden');
+    checkBox.innerHTML = '';
+    settingsBox.style.display = 'none';
     noFriendsNote.style.display = 'block';
   } else {
-    row.classList.remove('hidden');
     noFriendsNote.style.display = 'none';
-    select.innerHTML = friends.map(f=>`<option value="${f.replace(/"/g,'&quot;')}">${f}</option>`).join('');
+    settingsBox.style.display = 'block';
+    checkBox.innerHTML = friends.map(f => `
+      <label style="display:flex; align-items:center; gap:6px; padding:8px 0; cursor:pointer;">
+        <input type="checkbox" class="duel-friend-check" value="${f.replace(/"/g,'&quot;')}" style="margin:0; width:auto;"> ${escapeHtml(f)}
+      </label>
+    `).join('');
   }
 
   const duels = await fetchMyDuels();
@@ -4138,15 +4323,16 @@ async function showDuelHub(){
     ? `<div class="stat-box" style="display:inline-block; padding:10px 18px;"><div class="num">${totalW}-${totalL}</div><div class="lbl">Your Overall Duel Record</div></div>`
     : '';
 
-  // Per-opponent record: filter completed duels down to just this specific person,
-  // so "Recent Results" can show "3-1 all-time vs them" alongside each result.
-  function recordVs(opponentName){
+  // Head-to-head record vs a specific person, counted across every completed
+  // duel we've BOTH been in — regardless of how many other people were in
+  // that particular lobby with us.
+  function recordVs(otherName){
     let w = 0, l = 0, t = 0;
     duels.filter(d => d.status === 'complete').forEach(d => {
-      const otherName = d.challenger === profile.username ? d.opponent : d.challenger;
-      if(otherName !== opponentName) return;
-      const myScore = d.challenger === profile.username ? d.challenger_score : d.opponent_score;
-      const theirScore = d.challenger === profile.username ? d.opponent_score : d.challenger_score;
+      const me = d.players.find(p => p.username === profile.username && p.invite_status === 'accepted');
+      const them = d.players.find(p => p.username === otherName && p.invite_status === 'accepted');
+      if(!me || !them || me.score === null || them.score === null) return;
+      const myScore = Number(me.score), theirScore = Number(them.score);
       if(myScore === theirScore) t++;
       else if(myScore < theirScore) w++;
       else l++;
@@ -4154,77 +4340,141 @@ async function showDuelHub(){
     return { w, l, t };
   }
 
-  const incoming = duels.filter(d => d.status === 'pending' && d.opponent === profile.username);
+  const incoming = duels.filter(d => {
+    const me = d.players.find(p => p.username === profile.username);
+    return d.status === 'pending' && me && me.invite_status === 'invited';
+  });
   document.getElementById('duelIncoming').innerHTML = incoming.length === 0 ? '' : `
-    <h3>Incoming Challenges</h3>
-    ${incoming.map(d => `
+    <h3>Incoming Invites</h3>
+    ${incoming.map(d => {
+      const others = d.players.filter(p => p.username !== profile.username).map(p => p.username).join(', ');
+      const yearsNote = (d.years_filter && d.years_filter.length > 0) ? d.years_filter.join(', ') : 'All seasons';
+      return `
       <div class="shop-item">
-        <div class="info"><span class="emoji">⚔️</span><div><div class="name">${escapeHtml(d.challenger)} challenged you</div><div class="desc">Same 5 players, lowest total wins</div></div></div>
+        <div class="info"><span class="emoji">⚔️</span><div><div class="name">${escapeHtml(d.host)} invited you</div><div class="desc">With: ${escapeHtml(others)} · ${yearsNote} · ${d.timer_seconds}s/round</div></div></div>
         <div style="display:flex; gap:6px;">
-          <button class="shop-btn buy" onclick="acceptDuel('${d.id}')">Accept</button>
-          <button class="shop-btn" onclick="declineDuel('${d.id}')">Decline</button>
+          <button class="shop-btn buy" onclick="acceptGroupInvite('${d.id}')">Accept</button>
+          <button class="shop-btn" onclick="declineGroupInvite('${d.id}')">Decline</button>
         </div>
-      </div>`).join('')}
+      </div>`;
+    }).join('')}
+  `;
+
+  // Lobbies I'm hosting that haven't started yet — show who's accepted so far
+  // and let the host start once at least one other person is in.
+  const hosting = duels.filter(d => d.status === 'pending' && d.host === profile.username);
+  document.getElementById('duelHosting').innerHTML = hosting.length === 0 ? '' : `
+    <h3>Your Lobbies</h3>
+    ${hosting.map(d => {
+      const accepted = d.players.filter(p => p.invite_status === 'accepted');
+      const statusList = d.players.map(p => `${escapeHtml(p.username)} (${p.invite_status})`).join(', ');
+      const canStart = accepted.length >= 2;
+      return `
+      <div class="shop-item">
+        <div class="info"><span class="emoji">🎮</span><div><div class="name">Lobby: ${statusList}</div><div class="desc">${d.timer_seconds}s/round</div></div></div>
+        ${canStart ? `<button class="shop-btn buy" onclick="startGroupMatch('${d.id}')">Start (${accepted.length})</button>` : `<span class="badge-pill push">Waiting</span>`}
+      </div>`;
+    }).join('')}
   `;
 
   const active = duels.filter(d => d.status === 'active');
   document.getElementById('duelActive').innerHTML = active.length === 0 ? '' : `
     <h3>In Progress</h3>
     ${active.map(d => {
-      const iAmChallenger = d.challenger === profile.username;
-      const myScore = iAmChallenger ? d.challenger_score : d.opponent_score;
-      const otherName = iAmChallenger ? d.opponent : d.challenger;
-      const played = myScore !== null && myScore !== undefined;
+      const me = d.players.find(p => p.username === profile.username);
+      if(!me || me.invite_status !== 'accepted') return '';
+      const played = me.score !== null && me.score !== undefined;
+      const others = d.players.filter(p => p.username !== profile.username && p.invite_status === 'accepted').map(p => p.username).join(', ');
       return `
       <div class="shop-item">
-        <div class="info"><span class="emoji">⚔️</span><div><div class="name">vs ${escapeHtml(otherName)}</div><div class="desc">${played ? `You scored ${myScore} yds off — waiting on them` : 'Your rounds not played yet'}</div></div></div>
+        <div class="info"><span class="emoji">⚔️</span><div><div class="name">vs ${escapeHtml(others)}</div><div class="desc">${played ? `You scored ${Number(me.score)} yds off — waiting on others` : 'Your rounds not played yet'}</div></div></div>
         ${played ? '<span class="badge-pill push">WAITING</span>' : `<button class="shop-btn buy" onclick="playDuelRound('${d.id}')">Play</button>`}
       </div>`;
     }).join('')}
   `;
 
-  const finished = duels.filter(d => d.status === 'complete' || d.status === 'declined').slice(0,10);
+  const finished = duels.filter(d => d.status === 'complete').slice(0,10);
   document.getElementById('duelHistory').innerHTML = finished.length === 0 ? '' : `
     <h3>Recent Results</h3>
     ${finished.map(d => {
-      if(d.status === 'declined') return `<div class="shop-item"><div class="info"><span class="emoji">🚫</span><div><div class="name">vs ${escapeHtml(d.challenger===profile.username?d.opponent:d.challenger)}</div><div class="desc">Declined</div></div></div></div>`;
-      const iAmChallenger = d.challenger === profile.username;
-      const myScore = iAmChallenger ? d.challenger_score : d.opponent_score;
-      const otherScore = iAmChallenger ? d.opponent_score : d.challenger_score;
-      const otherName = iAmChallenger ? d.opponent : d.challenger;
-      const outcome = myScore === otherScore ? 'push' : (myScore < otherScore ? 'win' : 'lose');
-      const label = outcome === 'push' ? 'TIE' : outcome === 'win' ? 'WON' : 'LOST';
-      const rec = recordVs(otherName);
-      return `<div class="shop-item"><div class="info"><span class="emoji">${outcome==='win'?'🏆':outcome==='lose'?'💀':'🤝'}</span><div><div class="name">vs ${escapeHtml(otherName)} <span class="muted" style="font-weight:400;">(${rec.w}-${rec.l}${rec.t?`-${rec.t}`:''} all-time)</span></div><div class="desc">You: ${myScore} yds off · Them: ${otherScore} yds off</div></div></div><span class="badge-pill ${outcome==='win'?'win':outcome==='lose'?'lose':'push'}">${label}</span></div>`;
+      const accepted = d.players.filter(p => p.invite_status === 'accepted' && p.score !== null);
+      const sorted = [...accepted].sort((a,b)=>Number(a.score)-Number(b.score));
+      const myRow = sorted.find(p => p.username === profile.username);
+      const iWon = myRow && sorted.length > 0 && Number(myRow.score) === Number(sorted[0].score);
+      const others = accepted.filter(p => p.username !== profile.username).map(p => `${escapeHtml(p.username)} (${Number(p.score)})`).join(', ');
+      return `<div class="shop-item"><div class="info"><span class="emoji">${iWon?'🏆':'💀'}</span><div><div class="name">You: ${myRow ? Number(myRow.score) : '—'} <span class="muted" style="font-weight:400;">vs ${others}</span></div></div></div><span class="badge-pill ${iWon?'win':'lose'}">${iWon?'WON':'LOST'}</span></div>`;
     }).join('')}
   `;
 }
 
-async function challengeFriend(){
-  const select = document.getElementById('duelFriendSelect');
-  const opponent = select.value;
-  if(!opponent) return;
-  const deck = drawDuelDeck();
-  const { error } = await sb.from('duels').insert({
-    challenger: profile.username,
-    opponent: opponent,
-    status: 'pending',
-    deck: deck
-  });
-  if(error){
-    showToast('Could not send challenge — try again.', true);
+async function sendGroupInvites(){
+  const checked = document.querySelectorAll('.duel-friend-check:checked');
+  const invitees = Array.from(checked).map(cb => cb.value);
+  if(invitees.length === 0){
+    showToast('Pick at least 1 friend to invite.', true);
     return;
   }
-  showToast(`Challenge sent to ${opponent}!`);
+  if(invitees.length > 3){
+    showToast('Max 3 friends invited (4 players total, including you).', true);
+    return;
+  }
+
+  const yearChecks = document.querySelectorAll('.duel-year-check:checked');
+  const allYearChecks = document.querySelectorAll('.duel-year-check');
+  const selectedYears = Array.from(yearChecks).map(cb => parseInt(cb.value,10));
+  const yearsFilter = (selectedYears.length === 0 || selectedYears.length === allYearChecks.length) ? null : selectedYears;
+
+  const timerSelect = document.getElementById('duelTimerSelect');
+  const timerSeconds = parseInt(timerSelect.value, 10);
+
+  const { data: duel, error } = await sb.from('duels').insert({
+    host: profile.username,
+    status: 'pending',
+    timer_seconds: timerSeconds,
+    years_filter: yearsFilter,
+    is_random: false
+  }).select().single();
+
+  if(error || !duel){
+    showToast('Could not create the match — try again.', true);
+    return;
+  }
+
+  const rows = [{ duel_id: duel.id, username: profile.username, invite_status: 'accepted' }]
+    .concat(invitees.map(name => ({ duel_id: duel.id, username: name, invite_status: 'invited' })));
+
+  const { error: playersError } = await sb.from('duel_players').insert(rows);
+  if(playersError){
+    showToast('Could not send invites — try again.', true);
+    return;
+  }
+
+  showToast(`Invites sent to ${invitees.join(', ')}!`);
   showDuelHub();
 }
 
-async function acceptDuel(duelId){
-  await sb.from('duels').update({ status: 'active' }).eq('id', duelId);
+async function acceptGroupInvite(duelId){
+  await sb.from('duel_players').update({ invite_status: 'accepted' }).eq('duel_id', duelId).eq('username', profile.username);
   showDuelHub();
 }
-async function declineDuel(duelId){
-  await sb.from('duels').update({ status: 'declined' }).eq('id', duelId);
+async function declineGroupInvite(duelId){
+  await sb.from('duel_players').update({ invite_status: 'declined' }).eq('duel_id', duelId).eq('username', profile.username);
+  showDuelHub();
+}
+
+async function startGroupMatch(duelId){
+  const { data: duel, error } = await sb.from('duels').select('*').eq('id', duelId).single();
+  if(error || !duel){
+    showToast('Could not start the match.', true);
+    return;
+  }
+  const deck = drawDuelDeck(duel.years_filter);
+  const { error: updateError } = await sb.from('duels').update({ deck, status: 'active' }).eq('id', duelId);
+  if(updateError){
+    showToast('Could not start the match.', true);
+    return;
+  }
+  showToast('Match started!');
   showDuelHub();
 }
 
@@ -4236,6 +4486,7 @@ async function playDuelRound(duelId){
   }
   duelMode = true;
   currentDuelId = duelId;
+  currentDuelTimerSeconds = data.timer_seconds || ROUND_SECONDS;
   roundPlayers = data.deck.map(k => findPlayerByKey(k)).filter(Boolean);
   currentRound = 0;
   guesses = [];
@@ -4245,56 +4496,189 @@ async function playDuelRound(duelId){
 async function finishDuelGame(){
   const totalScore = guesses.reduce((s,g)=>s+g.diff,0);
   const thisDuelId = currentDuelId;
-  const { data: duel, error } = await sb.from('duels').select('*').eq('id', thisDuelId).single();
-  if(error || !duel){
+
+  const { error: scoreError } = await sb.from('duel_players')
+    .update({ score: totalScore })
+    .eq('duel_id', thisDuelId)
+    .eq('username', profile.username);
+
+  if(scoreError){
     showToast('Something went wrong saving your duel result.', true);
     goHome();
     return;
   }
-  const iAmChallenger = duel.challenger === profile.username;
-  const updates = iAmChallenger ? { challenger_score: totalScore } : { opponent_score: totalScore };
-  const otherScore = iAmChallenger ? duel.opponent_score : duel.challenger_score;
-  const bothDone = otherScore !== null && otherScore !== undefined;
-  if(bothDone) updates.status = 'complete';
-  await sb.from('duels').update(updates).eq('id', thisDuelId);
+
+  const { data: allPlayers } = await sb.from('duel_players').select('*').eq('duel_id', thisDuelId);
+  const accepted = (allPlayers||[]).filter(p => p.invite_status === 'accepted');
+  const stillWaiting = accepted.filter(p => p.score === null || p.score === undefined);
 
   duelMode = false;
   currentDuelId = null;
+  currentDuelTimerSeconds = null;
+  profile.duelsPlayed = (profile.duelsPlayed||0) + 1;
+  saveInBackground(saveProfile);
 
   const content = document.getElementById('duelResultContent');
-  if(!bothDone){
-    waitingOnDuelId = thisDuelId; // keep watching this duel — checkWaitingDuelUpdate() flips the screen when they finish
+  if(stillWaiting.length > 0){
+    waitingOnDuelId = thisDuelId; // keep watching this duel — checkWaitingDuelUpdate() flips the screen when everyone's done
+    const names = stillWaiting.map(p => escapeHtml(p.username)).join(', ');
     content.innerHTML = `
       <div class="total-final">${totalScore}</div>
-      <p class="muted center">yards off, total across 5 rounds</p>
-      <div class="hint center">Waiting on your opponent to play their rounds — this screen will update on its own the moment they finish.</div>
+      <p class="muted center">yds off, total across 5 rounds</p>
+      <div class="hint center">Waiting on ${names} to finish their rounds — this screen will update on its own.</div>
     `;
-    profile.duelsPlayed = (profile.duelsPlayed||0) + 1;
-    saveInBackground(saveProfile);
   } else {
     waitingOnDuelId = null;
-    const outcome = totalScore === otherScore ? 'push' : (totalScore < otherScore ? 'win' : 'lose');
-    const otherName = iAmChallenger ? duel.opponent : duel.challenger;
-    profile.duelWins = profile.duelWins || 0;
-    profile.duelLosses = profile.duelLosses || 0;
-    if(outcome === 'win') profile.duelWins++;
-    if(outcome === 'lose') profile.duelLosses++;
-    if(profile.duelWins >= 1) unlockAchievement('duel_first_win');
-    if(profile.duelWins >= 5) unlockAchievement('duel_wins_5');
-    if(profile.duelWins >= 20) unlockAchievement('duel_wins_20');
-    if(profile.duelWins >= 50) unlockAchievement('duel_wins_50');
-    saveInBackground(saveProfile);
-    content.innerHTML = `
-      <div class="total-final">${outcome==='win' ? '🏆 You Won!' : outcome==='lose' ? '💀 You Lost' : '🤝 Tie Game'}</div>
-      <div class="stat-grid" style="margin-top:8px;">
-        <div class="stat-box"><div class="num">${totalScore}</div><div class="lbl">Your total</div></div>
-        <div class="stat-box"><div class="num">${otherScore}</div><div class="lbl">${escapeHtml(otherName)}'s total</div></div>
-      </div>
-    `;
-    if(outcome === 'win') celebrate(`🏆 Duel Won!<br>Beat ${otherName} ${totalScore} to ${otherScore}`);
+    await sb.from('duels').update({ status: 'complete' }).eq('id', thisDuelId);
+    renderFinalDuelRankings(accepted);
   }
   show('screen-duel-result');
 }
+
+// ---------- DAILY CHALLENGE ----------
+// Same 5 players for every single player, worldwide, on a given UTC date —
+// achieved with a seeded PRNG keyed to the date string, so no server round
+// trip is needed to agree on the deck; everyone's copy of PLAYERS is
+// identical (it ships in this file), and the date is universal.
+const DAILY_COMPLETION_REWARD = 300; // flat, not skill-scaled — no betting on a deck everyone already knows
+
+function mulberry32(seed){
+  return function(){
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function stringSeed(str){
+  let hash = 0;
+  for(let i=0;i<str.length;i++){ hash = (hash*31 + str.charCodeAt(i)) | 0; }
+  return hash;
+}
+function drawDailyDeck(dateKey){
+  const rng = mulberry32(stringSeed(dateKey + '-sharpyards-daily'));
+  const allYears = Object.keys(YEAR_DRAW_WEIGHTS);
+  const drawn = [];
+  let qbCount = 0;
+  const usedNames = new Set();
+  let safety = 0;
+  while(drawn.length < 5 && safety < 5000){
+    safety++;
+    const weights = allYears.map(y=>YEAR_DRAW_WEIGHTS[y]||10);
+    const total = weights.reduce((a,b)=>a+b,0);
+    let r = rng()*total;
+    let chosenYear = allYears[allYears.length-1];
+    for(let i=0;i<allYears.length;i++){ r-=weights[i]; if(r<=0){ chosenYear = allYears[i]; break; } }
+    const pool = PLAYERS.filter(p => String(p.year) === chosenYear && !usedNames.has(playerKey(p)));
+    if(pool.length === 0) continue;
+    const idx = Math.floor(rng()*pool.length);
+    const player = pool[idx];
+    if(player.pos === 'QB' && qbCount >= MAX_QB_PER_ROUND) continue;
+    drawn.push(playerKey(player));
+    usedNames.add(playerKey(player));
+    if(player.pos === 'QB') qbCount++;
+  }
+  return drawn;
+}
+
+function dailyAlreadyPlayedToday(){
+  return profile.dailyLastPlayedDate === todayUTC();
+}
+
+async function fetchDailyLeaderboard(dateKey){
+  const { data, error } = await sb.from('daily_results')
+    .select('username, total_score')
+    .eq('date', dateKey)
+    .order('total_score', { ascending: true })
+    .limit(50);
+  if(error || !data) return [];
+  return data;
+}
+
+async function showDailyChallenge(){
+  show('screen-daily');
+  const dateKey = todayUTC();
+
+  const streak = profile.dailyStreak || 0;
+  document.getElementById('dailyStreakBox').innerHTML = streak > 0
+    ? `<div class="stat-box" style="display:inline-block; padding:10px 18px;"><div class="num">🔥 ${streak}</div><div class="lbl">Day Streak</div></div>`
+    : '';
+
+  const content = document.getElementById('dailyContent');
+
+  if(dailyAlreadyPlayedToday()){
+    const board = await fetchDailyLeaderboard(dateKey);
+    const myRank = board.findIndex(r => r.username === profile.username) + 1;
+    content.innerHTML = `
+      <div class="total-final">${profile.dailyLastScore !== undefined ? profile.dailyLastScore : '—'}</div>
+      <p class="muted center">Your score today (yds off) — come back tomorrow for a new set of 5</p>
+      ${myRank > 0 ? `<p class="center">Rank today: <strong>#${myRank}</strong> of ${board.length}</p>` : ''}
+      <h3>Today's Leaderboard</h3>
+      ${board.slice(0,15).map((r,i) => `<div class="shop-item"><div class="info"><span class="emoji">${i===0?'🥇':i===1?'🥈':i===2?'🥉':'🎮'}</span><div><div class="name">${escapeHtml(r.username)}${r.username===profile.username?' (you)':''}</div></div></div><span class="badge-pill push">${Number(r.total_score)}</span></div>`).join('')}
+    `;
+  } else {
+    content.innerHTML = `
+      <button class="btn" onclick="playDailyChallenge()">▶ Play Today's 5</button>
+      <p class="muted center" style="margin-top:10px;">No bankroll risk — this is just for the streak and the leaderboard.</p>
+    `;
+  }
+}
+
+async function playDailyChallenge(){
+  const dateKey = todayUTC();
+  const deck = drawDailyDeck(dateKey);
+  dailyMode = true;
+  roundPlayers = deck.map(k => findPlayerByKey(k)).filter(Boolean);
+  currentRound = 0;
+  guesses = [];
+  loadRound();
+}
+
+async function finishDailyChallenge(){
+  const totalScore = guesses.reduce((s,g)=>s+g.diff,0);
+  const dateKey = todayUTC();
+  const hasPerfect = guesses.some(g => g.diff === 0);
+
+  dailyMode = false;
+
+  // Streak: continues only if yesterday was the last played day; otherwise resets to 1.
+  const wasYesterday = profile.dailyLastPlayedDate === yesterdayUTC();
+  profile.dailyStreak = wasYesterday ? (profile.dailyStreak||0) + 1 : 1;
+  profile.dailyLastPlayedDate = dateKey;
+  profile.dailyLastScore = totalScore;
+  profile.dailyGamesPlayed = (profile.dailyGamesPlayed||0) + 1;
+  profile.bankroll += DAILY_COMPLETION_REWARD;
+
+  unlockAchievement('daily_first');
+  if(profile.dailyStreak >= 3) unlockAchievement('daily_streak_3');
+  if(profile.dailyStreak >= 7) unlockAchievement('daily_streak_7');
+  if(profile.dailyStreak >= 30) unlockAchievement('daily_streak_30');
+  if(hasPerfect) unlockAchievement('daily_perfect');
+
+  // Submit to the shared table — unique on (date, username), so this can
+  // only ever happen once per person per day even if something double-fires.
+  await sb.from('daily_results').insert({ date: dateKey, username: profile.username, total_score: totalScore });
+
+  const board = await fetchDailyLeaderboard(dateKey);
+  const myRank = board.findIndex(r => r.username === profile.username) + 1;
+  if(myRank > 0 && myRank <= 3) unlockAchievement('daily_top3');
+
+  saveInBackground(saveProfile);
+  updateBankrollDisplay();
+
+  const content = document.getElementById('dailyResultContent');
+  content.innerHTML = `
+    <div class="total-final">${totalScore}</div>
+    <p class="muted center">yds off, total across 5 rounds · +${fmtMoney(DAILY_COMPLETION_REWARD)} for showing up</p>
+    ${myRank > 0 ? `<p class="center">Rank today: <strong>#${myRank}</strong> of ${board.length}</p>` : ''}
+    <div class="stat-box" style="display:inline-block; padding:10px 18px; margin-top:6px;"><div class="num">🔥 ${profile.dailyStreak}</div><div class="lbl">Day Streak</div></div>
+    <h3>Today's Leaderboard</h3>
+    ${board.slice(0,15).map((r,i) => `<div class="shop-item"><div class="info"><span class="emoji">${i===0?'🥇':i===1?'🥈':i===2?'🥉':'🎮'}</span><div><div class="name">${escapeHtml(r.username)}${r.username===profile.username?' (you)':''}</div></div></div><span class="badge-pill push">${Number(r.total_score)}</span></div>`).join('')}
+  `;
+  if(myRank === 1) celebrate(`🥇 #1 on today's Daily Challenge!<br>${totalScore} yds off`);
+  show('screen-daily-result');
+}
+
 function renderLeaderboard(){
   const content = document.getElementById('lbContent');
 
