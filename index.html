@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6815412715955699"
+     crossorigin="anonymous"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NFL Yardage Guessing Game</title>
@@ -618,6 +620,9 @@
     </div>
     <div class="btn-row">
       <button class="btn secondary" onclick="startTutorial()">❓ How to Play</button>
+    </div>
+    <div class="btn-row">
+      <a href="https://sharp-splits-nba.netlify.app" target="_blank" class="btn secondary" style="text-decoration:none; display:flex; align-items:center; justify-content:center;">🏀 Try Sharp Splits (our NBA game)</a>
     </div>
     <div class="btn-row hidden" id="adminBtnRow">
       <button class="btn secondary" onclick="showAdminPanel()">🛠️ Admin</button>
@@ -3579,8 +3584,10 @@ async function finishGame(){
   // achievements/leaderboard, so nothing about your actual score changes.
   const QB_YARDS_DIVISOR = 3.5;
   const effectiveDiff = g => g.player.pos === 'QB' ? g.diff / QB_YARDS_DIVISOR : g.diff;
-  const closest = Math.min(...guesses.map(effectiveDiff));
-  const furthest = Math.max(...guesses.map(effectiveDiff));
+  const closestRaw = Math.min(...guesses.map(g=>g.diff));   // true value — Best Round Ever/leaderboard use this
+  const furthestRaw = Math.max(...guesses.map(g=>g.diff));  // true value
+  const closest = Math.min(...guesses.map(effectiveDiff));   // scaled — betting thresholds only
+  const furthest = Math.max(...guesses.map(effectiveDiff));  // scaled — betting thresholds only
   const hasPerfect = guesses.some(g=>g.diff === 0);
 
   const rt = document.getElementById('roundTable');
@@ -3670,7 +3677,7 @@ async function finishGame(){
   profile.gameWinStreak = netProfit > 0 ? (profile.gameWinStreak||0) + 1 : 0;
   if(!gameBoosted){
     profile.bestGameTotal = (profile.bestGameTotal === null || profile.bestGameTotal === undefined) ? totalScore : Math.min(profile.bestGameTotal, totalScore);
-    profile.bestRoundDiff = (profile.bestRoundDiff === null || profile.bestRoundDiff === undefined) ? closest : Math.min(profile.bestRoundDiff, closest);
+    profile.bestRoundDiff = (profile.bestRoundDiff === null || profile.bestRoundDiff === undefined) ? closestRaw : Math.min(profile.bestRoundDiff, closestRaw);
   }
   if(hasPerfect) profile.perfectGuesses = (profile.perfectGuesses||0) + 1;
   profile.history = profile.history || [];
@@ -4397,9 +4404,9 @@ function closeLeaderboard(){
 }
 
 // ---------- DAILY BONUS + STREAK ----------
-const DAILY_BONUS_AMOUNT = 500;
+const DAILY_BONUS_AMOUNT = 1000;
 const STREAK_BONUS_PER_DAY = 50;
-const STREAK_BONUS_CAP_DAYS = 6; // day 7+ bonus stops growing (500 + 6*50 = 800 max)
+const STREAK_BONUS_CAP_DAYS = 6; // day 7+ bonus stops growing (1000 + 6*50 = 1300 max)
 function todayUTC(){
   return new Date().toISOString().slice(0,10); // YYYY-MM-DD, resets at midnight UTC
 }
