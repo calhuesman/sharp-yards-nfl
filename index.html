@@ -894,6 +894,10 @@
       <button class="btn" style="width:auto; padding:0 16px;" onclick="fixPrestigeLevel()">Set</button>
     </div>
 
+    <h3 style="margin-top:0;">Edit Any Player</h3>
+    <p class="muted" style="margin-top:-6px;">Manually fix bankroll, prestige, display name, or equipped badge on any account — click Edit on someone below to revert an exploit or correct a mistake.</p>
+    <div id="adminEditPanel" style="margin-bottom:10px;"></div>
+
     <input type="text" id="adminSearchInput" placeholder="Filter by name…" oninput="renderAdminList()">
     <div id="adminList" style="margin-top:10px;"><p class="muted center">Loading accounts…</p></div>
     <button class="btn ghost" onclick="goHome()">← Back to Home</button>
@@ -1570,6 +1574,27 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // delete at the database level for anyone else even if they somehow got to
 // this screen.
 const OWNER_EMAIL = "calhuesman14@gmail.com";
+
+// ---------- NAME FILTER ----------
+// Blocks racial slurs and the worst profanity from being used as a display
+// name, at both signup and rename. Not exhaustive — no keyword list ever
+// catches every possible evasion (spacing, leetspeak, unicode lookalikes) —
+// but it stops the straightforward cases, which is the vast majority of them.
+const BANNED_NAME_WORDS = [
+  "nigger","nigga","chink","spic","kike","gook","wetback","beaner","coon",
+  "faggot","fag","tranny","retard","paki","raghead","towelhead","cracker",
+  "cunt","whore","slut"
+];
+function normalizeForNameFilter(text){
+  return text.toLowerCase()
+    .replace(/[0@]/g,'o').replace(/1/g,'i').replace(/3/g,'e').replace(/4/g,'a')
+    .replace(/5/g,'s').replace(/7/g,'t').replace(/\$/g,'s')
+    .replace(/[^a-z]/g,''); // strip spaces/punctuation so "n i g g e r" still gets caught
+}
+function containsBannedWord(text){
+  const normalized = normalizeForNameFilter(text);
+  return BANNED_NAME_WORDS.some(word => normalized.includes(word));
+}
 
 // Fire-and-forget wrapper: used anywhere a save should NEVER block the UI from
 // moving on. The write still happens in the background; gameplay doesn't wait on it.
@@ -2365,6 +2390,11 @@ async function submitAuth(){
       btn.disabled = false; btn.textContent = originalText;
       return;
     }
+    if(containsBannedWord(displayName)){
+      errEl.textContent = 'That display name isn\'t allowed — please choose another.';
+      btn.disabled = false; btn.textContent = originalText;
+      return;
+    }
     const { data, error } = await sb.auth.signUp({ email, password });
     if(error){
       errEl.textContent = error.message;
@@ -2469,6 +2499,10 @@ async function editDisplayName(){
   const newName = window.prompt('Enter your new display name:', profile.username);
   if(!newName || !newName.trim() || newName.trim().length < 2) return;
   const trimmed = newName.trim().slice(0,20);
+  if(containsBannedWord(trimmed)){
+    showToast('That display name isn\'t allowed — please choose another.', true);
+    return;
+  }
   const { data: { user } } = await sb.auth.getUser();
   const { error } = await sb.from('profiles').update({ username: trimmed }).eq('id', user.id);
   if(error){
@@ -2953,9 +2987,15 @@ function computeTotalLines(){
     base = capped;
   }
   const lines = {
-    comfortable: Math.max(roundTo(base*1.05, 25), 300),
-    sharp: Math.max(roundTo(base*0.65, 25), 200),
-    elite: Math.max(roundTo(base*0.35, 25), 100),
+    // Floor (Math.max) stops a line going too LOW even for a very sharp player —
+    // still meant to be beatable. Ceiling (Math.min) is the actual fix for
+    // someone deliberately tanking games to inflate their median and make the
+    // line trivially easy — no matter how bad your recent history looks, these
+    // absolute caps mean the line can never get easier than this. Nothing stops
+    // it from going lower (harder) for someone who's genuinely playing well.
+    comfortable: Math.min(Math.max(roundTo(base*1.05, 25), 300), 1000),
+    sharp: Math.min(Math.max(roundTo(base*0.65, 25), 200), 700),
+    elite: Math.min(Math.max(roundTo(base*0.35, 25), 100), 450),
     avg: med
   };
   profile.cachedLineDate = windowKey;
@@ -3962,9 +4002,10 @@ let adminAccounts = [];
 async function showAdminPanel(){
   show('screen-admin');
   renderTestBankrollStatus();
+  closeAdminEdit();
   document.getElementById('adminList').innerHTML = '<p class="muted center">Loading accounts…</p>';
   const { data, error } = await sb.from('profiles')
-    .select('id,username,bankroll,game_state')
+    .select('id,username,bankroll,equipped_flair,game_state')
     .order('username', { ascending: true });
   if(error || !data){
     document.getElementById('adminList').innerHTML = '<p class="muted center">Could not load accounts.</p>';
@@ -3974,6 +4015,8 @@ async function showAdminPanel(){
     id: row.id,
     username: row.username,
     bankroll: Number(row.bankroll),
+    equippedFlair: row.equipped_flair || '',
+    prestigeLevel: (row.game_state||{}).prestigeLevel || 0,
     gamesPlayed: (row.game_state||{}).gamesPlayed || 0
   }));
   renderAdminList();
@@ -4046,9 +4089,73 @@ function renderAdminList(){
   }
   list.innerHTML = filtered.map(a => `
     <div class="shop-item">
-      <div class="info"><span class="emoji">👤</span><div><div class="name">${escapeHtml(a.username)}${a.username===profile.username?' (you)':''}</div><div class="desc">${fmtMoney(a.bankroll)} · ${a.gamesPlayed} games played</div></div></div>
-      ${a.username===profile.username ? '' : `<button class="shop-btn" style="color:var(--red); border-color:var(--red);" onclick="deleteAccount('${a.id}','${escapeHtml(a.username).replace(/'/g,"\\'")}')">Delete</button>`}
+      <div class="info"><span class="emoji">👤</span><div><div class="name">${escapeHtml(a.username)}${a.username===profile.username?' (you)':''}</div><div class="desc">${fmtMoney(a.bankroll)} · ${a.gamesPlayed} games played${a.prestigeLevel?` · ${a.prestigeLevel}⭐`:''}</div></div></div>
+      <div style="display:flex; gap:6px;">
+        <button class="shop-btn" onclick="openAdminEdit('${a.id}')">Edit</button>
+        ${a.username===profile.username ? '' : `<button class="shop-btn" style="color:var(--red); border-color:var(--red);" onclick="deleteAccount('${a.id}','${escapeHtml(a.username).replace(/'/g,"\\'")}')">Delete</button>`}
+      </div>
     </div>`).join('');
+}
+let adminEditingId = null;
+function openAdminEdit(id){
+  const acc = adminAccounts.find(a => a.id === id);
+  if(!acc) return;
+  adminEditingId = id;
+  document.getElementById('adminEditPanel').innerHTML = `
+    <div class="shop-item" style="flex-direction:column; align-items:stretch; gap:8px;">
+      <div class="name">Editing: ${escapeHtml(acc.username)}</div>
+      <label class="muted" style="font-size:0.78rem;">Display Name</label>
+      <input type="text" id="adminEditName" value="${escapeHtml(acc.username)}" style="margin-top:0;">
+      <label class="muted" style="font-size:0.78rem;">Bankroll</label>
+      <input type="number" id="adminEditBankroll" value="${acc.bankroll}" style="margin-top:0;">
+      <label class="muted" style="font-size:0.78rem;">Prestige Level</label>
+      <input type="number" id="adminEditPrestige" value="${acc.prestigeLevel||0}" min="0" style="margin-top:0;">
+      <label class="muted" style="font-size:0.78rem;">Equipped Badge/Flair (emoji, or leave blank for none)</label>
+      <input type="text" id="adminEditFlair" value="${escapeHtml(acc.equippedFlair||'')}" style="margin-top:0;">
+      <div style="display:flex; gap:8px; margin-top:6px;">
+        <button class="btn" style="width:auto; padding:0 16px;" onclick="saveAdminEdit()">Save Changes</button>
+        <button class="btn ghost" style="width:auto; padding:0 16px;" onclick="closeAdminEdit()">Cancel</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('adminEditPanel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function closeAdminEdit(){
+  adminEditingId = null;
+  const el = document.getElementById('adminEditPanel');
+  if(el) el.innerHTML = '';
+}
+async function saveAdminEdit(){
+  if(!adminEditingId) return;
+  const newName = document.getElementById('adminEditName').value.trim();
+  const newBankroll = parseFloat(document.getElementById('adminEditBankroll').value);
+  const newPrestige = parseInt(document.getElementById('adminEditPrestige').value, 10);
+  const newFlair = document.getElementById('adminEditFlair').value.trim();
+
+  if(!newName || newName.length < 2){ showToast('Name needs at least 2 characters.', true); return; }
+  if(containsBannedWord(newName)){ showToast('That name isn\'t allowed.', true); return; }
+  if(isNaN(newBankroll) || newBankroll < 0){ showToast('Enter a valid bankroll.', true); return; }
+  if(isNaN(newPrestige) || newPrestige < 0){ showToast('Enter a valid prestige level.', true); return; }
+
+  const { data: row, error: fetchError } = await sb.from('profiles').select('game_state').eq('id', adminEditingId).single();
+  if(fetchError || !row){ showToast('Could not load that account.', true); return; }
+
+  const newGameState = Object.assign({}, row.game_state, { prestigeLevel: newPrestige });
+  const { error: updateError } = await sb.from('profiles').update({
+    username: newName,
+    bankroll: newBankroll,
+    equipped_flair: newFlair || null,
+    game_state: newGameState
+  }).eq('id', adminEditingId);
+
+  if(updateError){
+    const isDupe = (updateError.message||'').toLowerCase().includes('duplicate') || (updateError.code === '23505');
+    showToast(isDupe ? `"${newName}" is already taken by someone else.` : 'Save failed — check the SQL policy allows admin updates.', true);
+    return;
+  }
+  showToast(`Updated ${newName}.`);
+  closeAdminEdit();
+  showAdminPanel();
 }
 async function deleteAccount(id, username){
   const ok = window.confirm(`Delete "${username}" from the leaderboard permanently?\n\nThis removes their profile, bankroll, and stats. If they log back in, they'll start over as a brand new account. This cannot be undone.`);
