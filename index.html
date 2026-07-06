@@ -433,7 +433,7 @@
     padding:8px 14px; border-radius:20px; border:1px solid var(--border);
     background:#1a2230; color:var(--text); font-size:0.8rem; font-weight:700; cursor:pointer; white-space:nowrap;
   }
-  .shop-btn.buy{background:linear-gradient(180deg, var(--accent), var(--accent-dark)); border:none; color:#fff;}
+  .shop-btn.buy{background:linear-gradient(180deg, #6ea8ff, var(--accent)); border:none; color:#fff; box-shadow:0 2px 8px rgba(79,140,255,0.45); font-weight:800;}
   .shop-btn.equipped{background:rgba(61,220,132,0.15); border-color:var(--green); color:var(--green); cursor:default;}
   .flair-tag{font-size:0.95em; margin-left:4px;}
   .boost-row{
@@ -747,11 +747,11 @@
 
     <h3 style="margin-top:6px;">💰 Get More Cash</h3>
     <div id="adWatchBannerShop" style="margin-bottom:8px;"></div>
-    <p class="muted" style="margin-top:0;">Real-money cash packs are coming once accounts are live — here's a preview:</p>
-    <div class="cash-pack-item"><div><div class="name">Starter Pack</div><div class="desc">$1.99 → 3,000 cash</div></div><span class="coming-soon-pill">Coming Soon</span></div>
-    <div class="cash-pack-item"><div><div class="name">Pro Pack</div><div class="desc">$4.99 → 9,500 cash</div></div><span class="coming-soon-pill">Coming Soon</span></div>
-    <div class="cash-pack-item"><div><div class="name">High Roller Pack <span class="muted">(great value)</span></div><div class="desc">$9.99 → 22,000 cash</div></div><span class="coming-soon-pill">Coming Soon</span></div>
-    <div class="cash-pack-item"><div><div class="name">Whale Pack <span class="muted">(best value)</span></div><div class="desc">$19.99 → 55,000 cash</div></div><span class="coming-soon-pill">Coming Soon</span></div>
+    <p class="muted" style="margin-top:0;">Real-money purchases — processed securely by Stripe, we never see or store your card details.</p>
+    <div class="cash-pack-item"><div><div class="name">Starter Pack</div><div class="desc">$1.99 → 4,000 cash</div></div><button class="shop-btn buy" onclick="buyCashPack('starter', this)">Buy</button></div>
+    <div class="cash-pack-item"><div><div class="name">Pro Pack</div><div class="desc">$4.99 → 13,000 cash</div></div><button class="shop-btn buy" onclick="buyCashPack('pro', this)">Buy</button></div>
+    <div class="cash-pack-item"><div><div class="name">High Roller Pack <span class="muted">(great value)</span></div><div class="desc">$9.99 → 30,000 cash</div></div><button class="shop-btn buy" onclick="buyCashPack('highroller', this)">Buy</button></div>
+    <div class="cash-pack-item"><div><div class="name">Whale Pack <span class="muted">(best value)</span></div><div class="desc">$19.99 → 75,000 cash</div></div><button class="shop-btn buy" onclick="buyCashPack('whale', this)">Buy</button></div>
 
     <div class="tier-label common">Common</div>
     <p class="muted" style="margin-top:0;">Cheap, useful, always available mid-round: <strong>Re-roll</strong> ($150, swap your current player) and <strong>Scout Report</strong> ($175, reveals games played + a rough yardage range). Both flag the game as boosted.</p>
@@ -794,6 +794,7 @@
       <button class="close-x" onclick="goHome()" aria-label="Close">✕</button>
     </div>
     <p class="muted">Pure bragging rights — same 5 players, whoever's total is lower wins. Doesn't touch your bankroll, achievements, or the main leaderboard.</p>
+    <div id="duelOverallRecord" style="margin-bottom:10px;"></div>
 
     <h3 style="margin-top:14px;">Play Anyone</h3>
     <div id="duelQueueBox"></div>
@@ -4131,6 +4132,28 @@ async function showDuelHub(){
 
   const duels = await fetchMyDuels();
 
+  const totalW = profile.duelWins || 0;
+  const totalL = profile.duelLosses || 0;
+  document.getElementById('duelOverallRecord').innerHTML = (totalW + totalL) > 0
+    ? `<div class="stat-box" style="display:inline-block; padding:10px 18px;"><div class="num">${totalW}-${totalL}</div><div class="lbl">Your Overall Duel Record</div></div>`
+    : '';
+
+  // Per-opponent record: filter completed duels down to just this specific person,
+  // so "Recent Results" can show "3-1 all-time vs them" alongside each result.
+  function recordVs(opponentName){
+    let w = 0, l = 0, t = 0;
+    duels.filter(d => d.status === 'complete').forEach(d => {
+      const otherName = d.challenger === profile.username ? d.opponent : d.challenger;
+      if(otherName !== opponentName) return;
+      const myScore = d.challenger === profile.username ? d.challenger_score : d.opponent_score;
+      const theirScore = d.challenger === profile.username ? d.opponent_score : d.challenger_score;
+      if(myScore === theirScore) t++;
+      else if(myScore < theirScore) w++;
+      else l++;
+    });
+    return { w, l, t };
+  }
+
   const incoming = duels.filter(d => d.status === 'pending' && d.opponent === profile.username);
   document.getElementById('duelIncoming').innerHTML = incoming.length === 0 ? '' : `
     <h3>Incoming Challenges</h3>
@@ -4171,7 +4194,8 @@ async function showDuelHub(){
       const otherName = iAmChallenger ? d.opponent : d.challenger;
       const outcome = myScore === otherScore ? 'push' : (myScore < otherScore ? 'win' : 'lose');
       const label = outcome === 'push' ? 'TIE' : outcome === 'win' ? 'WON' : 'LOST';
-      return `<div class="shop-item"><div class="info"><span class="emoji">${outcome==='win'?'🏆':outcome==='lose'?'💀':'🤝'}</span><div><div class="name">vs ${escapeHtml(otherName)}</div><div class="desc">You: ${myScore} yds off · Them: ${otherScore} yds off</div></div></div><span class="badge-pill ${outcome==='win'?'win':outcome==='lose'?'lose':'push'}">${label}</span></div>`;
+      const rec = recordVs(otherName);
+      return `<div class="shop-item"><div class="info"><span class="emoji">${outcome==='win'?'🏆':outcome==='lose'?'💀':'🤝'}</span><div><div class="name">vs ${escapeHtml(otherName)} <span class="muted" style="font-weight:400;">(${rec.w}-${rec.l}${rec.t?`-${rec.t}`:''} all-time)</span></div><div class="desc">You: ${myScore} yds off · Them: ${otherScore} yds off</div></div></div><span class="badge-pill ${outcome==='win'?'win':outcome==='lose'?'lose':'push'}">${label}</span></div>`;
     }).join('')}
   `;
 }
@@ -4488,6 +4512,46 @@ function renderDailyBonusBanner(){
 // Flip this to true once real ads are actually running on the site — until then the
 // button just stays hidden everywhere instead of offering a reward with no ad behind it.
 const ADS_ENABLED = false;
+
+// ---------- STRIPE CASH PACKS ----------
+async function buyCashPack(packId, btn){
+  if(btn) { btn.disabled = true; btn.textContent = 'Please wait…'; }
+  try{
+    const { data: { session } } = await sb.auth.getSession();
+    const resp = await fetch(`${SUPABASE_URL}/functions/v1/create-checkout-session`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      },
+      body: JSON.stringify({ packId, siteUrl: window.location.href.split('?')[0] })
+    });
+    const data = await resp.json();
+    if(data.url){
+      window.location.href = data.url;
+    } else {
+      showToast(data.error || 'Something went wrong starting checkout.', true);
+      if(btn) { btn.disabled = false; btn.textContent = 'Buy'; }
+    }
+  } catch(err){
+    showToast('Could not reach the payment server — try again in a moment.', true);
+    if(btn) { btn.disabled = false; btn.textContent = 'Buy'; }
+  }
+}
+(function checkPurchaseRedirect(){
+  const params = new URLSearchParams(window.location.search);
+  const status = params.get('purchase');
+  if(status === 'success'){
+    window.history.replaceState({}, '', window.location.pathname);
+    setTimeout(async () => {
+      await loadProfile();
+      updateBankrollDisplay();
+      showToast('Purchase complete — your cash has been added!');
+    }, 800);
+  } else if(status === 'cancelled'){
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+})();
 const AD_REWARD = 150;
 const AD_DAILY_LIMIT = 3;
 const AD_DURATION_SECONDS = 5;
