@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About Sharp Yards — How It Works</title>
+<meta name="description" content="Learn how Sharp Yards works: guess real NFL players' season yardage totals, place fun-money bets, and climb the leaderboard. A full guide to gameplay, scoring, betting, and data sources.">
+<style>
+  :root {
+    --bg-top: #131a26; --bg-bottom: #080b11; --card: #131a26;
+    --border: #262e3d; --text: #eef2f7; --muted: #8b96a5; --accent: #4f8cff;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background: radial-gradient(circle at top, var(--bg-top) 0%, var(--bg-bottom) 100%);
+    color: var(--text); line-height:1.7;
+  }
+  .wrap{max-width:760px; margin:0 auto; padding:32px 20px 80px;}
+  h1{font-size:1.9rem; margin-bottom:4px;}
+  h2{font-size:1.3rem; margin-top:40px; margin-bottom:10px; color:#fff;}
+  h3{font-size:1.05rem; margin-top:24px; margin-bottom:6px; color:#dbe2ec;}
+  p{color:#c7cedb; margin:0 0 14px;}
+  .subtitle{color:var(--muted); margin-bottom:32px; font-size:0.95rem;}
+  a{color:var(--accent);}
+  .back{display:inline-block; margin-bottom:24px; color:var(--accent); text-decoration:none; font-size:0.9rem;}
+  ul, ol{color:#c7cedb; padding-left:22px;}
+  li{margin-bottom:8px;}
+  .card{background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:14px; padding:18px 20px; margin:20px 0;}
+  .divider{height:1px; background:var(--border); margin:36px 0;}
+  footer{color:var(--muted); font-size:0.82rem; margin-top:48px; padding-top:20px; border-top:1px solid var(--border);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="./index.html">← Back to the game</a>
+  <h1>🏈 About Sharp Yards</h1>
+  <p class="subtitle">How the game works, where the stats come from, and how the betting system is built.</p>
+
+  <h2>What is Sharp Yards?</h2>
+  <p>Sharp Yards is a stat-recall guessing game built around real NFL statistics. Each round, you're shown a real player from a real season between 2020 and 2025, and asked to guess their total yardage for that year — rushing yards for running backs, receiving yards for wide receivers and tight ends, or passing yards for quarterbacks. You play five rounds per game, and your score is simply how far off your guesses were, added together. Lower is better. A perfect memory of every skill-position player's season would get you a score of zero; most people land somewhere between 100 and 1,000 yards off across all five rounds, depending on how well they know a given season.</p>
+  <p>On top of the core guessing game, Sharp Yards layers in a fun-money betting system, a cosmetic shop, achievements, a daily challenge that's identical for every player, and head-to-head matches you can play against friends or random opponents. None of it involves real money changing hands between players — the in-game bankroll is a scorekeeping and progression device, not a wagering product.</p>
+
+  <h2>How a round works</h2>
+  <ol>
+    <li><strong>The reveal.</strong> Before you see the player, you're shown which season they're from — this is a small clue, since some seasons run higher or lower in overall yardage than others depending on the era and rule changes.</li>
+    <li><strong>The guess.</strong> You have eight seconds to type a yardage total. There's no partial credit for direction — being 50 yards over or 50 yards under counts the same.</li>
+    <li><strong>The reveal.</strong> Your guess is compared to the real total, and the difference gets added to your running score for the game.</li>
+    <li><strong>Five rounds, one score.</strong> After five rounds, your total is locked in. That's your game.</li>
+  </ol>
+  <p>The deck of players is drawn from six real NFL seasons, weighted so the most recent season (which has the deepest player pool) shows up a bit more often than the others, without letting it dominate the mix. Within a single game, you'll never see the same player twice, and quarterbacks are deliberately capped at one per round of five — QB passing totals run so much higher than skill-position rushing or receiving numbers that letting multiple QBs into the same hand would badly skew the difficulty.</p>
+
+  <h2>Where the data comes from</h2>
+  <p>Every player and every yardage total in Sharp Yards is a real, verified statistic pulled from Pro-Football-Reference, covering the 2020 through 2025 NFL regular seasons. This isn't simulated or randomly generated data — if the game tells you a player's season total, that's the actual number from that actual season. The pool currently includes several hundred individual player-seasons across running backs, wide receivers, tight ends, and quarterbacks, and it continues to grow as more seasons and more player depth get added.</p>
+  <p>Because player rosters change teams, get traded mid-season, or get injured for stretches of a year, building this dataset accurately takes real verification work — checking that a player's listed team actually matches the team they played for in that specific season, not just their current team, which is a surprisingly common source of error in quickly-assembled sports databases.</p>
+
+  <h2>The betting system, explained</h2>
+  <p>Every game gives you the option to place fun-money bets before you start, using bankroll you've built up through play — no real currency is ever involved. The bet categories are:</p>
+  <ul>
+    <li><strong>Total Score Under</strong> — bet that your combined five-round score will land under a given line. The line itself is personalized: it adjusts based on your own recent performance, refreshed periodically, so the game stays challenging as you improve.</li>
+    <li><strong>Best Round Under</strong> — bet that at least one of your five guesses will land within a tight margin of the real number.</li>
+    <li><strong>Worst Round Under</strong> — the opposite bet: that even your sloppiest guess of the five stays under a threshold, rewarding consistency rather than one lucky guess.</li>
+    <li><strong>Hot Hand</strong> — a bet that three or more of your five rounds will land within a small margin of accuracy.</li>
+    <li><strong>Star Power</strong> — a pure-luck bet on whether at least one of the five players you're dealt is a recognized star player, independent of how well you guess.</li>
+    <li><strong>Season Spread</strong> — another luck-based bet on how many different seasons show up across your five players.</li>
+    <li><strong>Perfect Guess</strong> — a long-shot bet that pays out generously if you nail a player's exact yardage total on any single round.</li>
+  </ul>
+  <p>Bets use standard American odds notation (the same format used by real sportsbooks), so a bet listed at "+150" pays $150 profit on a $100 stake if it wins, and "-150" means you'd need to stake $150 to profit $100. All of this money is entirely in-game — it has no cash value and can't be withdrawn, exchanged, or converted to real currency in any way.</p>
+
+  <h2>Shop, achievements, and progression</h2>
+  <p>Bankroll earned through play (and through the daily login bonus) can be spent in the in-game shop on purely cosmetic items — display flair, color themes, and similar visual customization — as well as gameplay tools like re-rolling a player you don't recognize, or paying for a scout report hint. Tools that affect your accuracy are clearly flagged and excluded from official "best score" tracking, so the leaderboard stays an honest measure of actual skill rather than how much bankroll someone spent on hints.</p>
+  <p>There's a full achievement system tracking milestones — win streaks, perfect guesses, daily challenge streaks, head-to-head duel records, and collection-style goals like owning every cosmetic flair. A prestige system lets committed players reset their bankroll in exchange for a permanent visual marker once they've hit a high bankroll milestone, similar to prestige systems in other progression-based games.</p>
+
+  <h2>Daily Challenge</h2>
+  <p>Once a day, every player who opens Sharp Yards gets served the exact same five players — the identity of that day's deck is generated the same way for everyone, worldwide, using the date itself as the seed. This means your Daily Challenge score is directly comparable to anyone else who plays that day, and there's a dedicated leaderboard just for that day's results. There's no betting on the Daily Challenge — it's built as a clean, bankroll-neutral mode focused purely on bragging rights and a day-streak you can build up over time.</p>
+
+  <h2>Head-to-Head</h2>
+  <p>You can challenge friends directly — inviting up to three others to a shared lobby where everyone plays the identical five players, with custom settings the host controls (which seasons to draw from, how long the per-round timer runs). There's also random matchmaking for a quick 1-on-1 against whoever else is waiting, using standard default settings. Like the Daily Challenge, head-to-head play doesn't touch your bankroll — it's a separate, bragging-rights-only mode with its own win/loss record tracking.</p>
+
+  <div class="divider"></div>
+
+  <h2>A note on the "betting" language</h2>
+  <p>Sharp Yards uses sportsbook-style language — odds, lines, stakes — because that framing makes the accuracy challenge more engaging, not because any real money is involved. There is no way to deposit real currency, no way to withdraw in-game currency as cash, and no real-world monetary stakes of any kind tied to the outcome of a bet within the game. It's closer in spirit to a game of pretend-money poker among friends than to any regulated gambling product.</p>
+
+  <footer>
+    Sharp Yards is a fan-made stat guessing game. Player statistics sourced from Pro-Football-Reference. Not affiliated with the NFL or any NFL team.
+  </footer>
+</div>
+</body>
+</html>

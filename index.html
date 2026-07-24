@@ -554,6 +554,7 @@
   <div class="brand">
     <h1>🏈 Sharp Yards</h1>
     <div class="sub">2020-2025 Regular Seasons · Real stats via Pro-Football-Reference</div>
+    <div class="sub" style="font-size:0.72rem; opacity:0.65; margin-top:2px;">Free-to-play stat guessing game · Fun-money only, no real-money wagering</div>
   </div>
 
   <div class="topbar" id="topbar" style="display:none;">
@@ -627,7 +628,7 @@
     <div class="stat-grid" id="homeStats"></div>
     <div id="achievementsProgress" style="margin-top:10px;"></div>
     <div class="rules-box">
-      <strong>How it works:</strong> Each round reveals a real NFL skill-position player from a season between 2020 and 2025 — you'll see which year right before the reveal. You guess their season yardage total (rushing / receiving / passing). Score = how far off you were. Lower total across 5 rounds is better. 516 real player-seasons in the pool, no repeats until everyone's been used, max 1 QB per game, 8 seconds per guess.
+      <strong>How it works:</strong> Each round reveals a real NFL skill-position player from a season between 2020 and 2025 — you'll see which year right before the reveal. You guess their season yardage total (rushing / receiving / passing). Score = how far off you were. Lower total across 5 rounds is better. 549 real player-seasons in the pool, no repeats until everyone's been used, max 1 QB per game, 8 seconds per guess.
     </div>
     <button class="btn" onclick="goToBetting()">▶ Start a Game</button>
     <button class="btn secondary" id="dailyChallengeBtn" onclick="showDailyChallenge()" style="border-color:var(--gold); color:var(--gold);">📅 Daily Challenge</button>
@@ -868,6 +869,8 @@
   <div id="screen-daily-result" class="card hidden">
     <h2 style="margin-top:0;">📅 Today's Result</h2>
     <div id="dailyResultContent"></div>
+    <div class="share-box hidden" id="dailyShareBox"></div>
+    <button class="btn secondary" onclick="shareDailyResults()">📤 Share Results</button>
     <button class="btn" onclick="showDailyChallenge()">← Back to Daily Challenge</button>
   </div>
 
@@ -926,6 +929,7 @@
   </div>
 
   <div class="hint">Stats sourced from Pro-Football-Reference.com — <a class="src" href="https://www.pro-football-reference.com/years/2025/" target="_blank">2025</a>, <a class="src" href="https://www.pro-football-reference.com/years/2024/" target="_blank">2024</a>, <a class="src" href="https://www.pro-football-reference.com/years/2023/" target="_blank">2023</a>, <a class="src" href="https://www.pro-football-reference.com/years/2022/" target="_blank">2022</a>, <a class="src" href="https://www.pro-football-reference.com/years/2021/" target="_blank">2021</a>, and <a class="src" href="https://www.pro-football-reference.com/years/2020/" target="_blank">2020</a> NFL seasons. This is a fun-money game; no real wagering occurs. Your name, bankroll, and best score are stored so the leaderboard can show them to other players.</div>
+  <div class="hint" style="margin-top:6px;"><a class="src" href="./about.html">About / How It Works</a> · <a class="src" href="./faq.html">FAQ</a> · <a class="src" href="./privacy.html">Privacy Policy</a> · <a class="src" href="./contact.html">Contact</a></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1527,7 +1531,48 @@ const PLAYERS = [
   {name:"Rob Gronkowski", team:"TB", pos:"TE", yards:623, year:2020, games:null, starts:null, note:"Buccaneers' TE, Super Bowl champion, first year after New England"},
   {name:"Dallas Goedert", team:"PHI", pos:"TE", yards:524, year:2020, games:null, starts:null, note:"Eagles' TE"},
   {name:"A.J. Green", team:"CIN", pos:"WR", yards:523, year:2020, games:null, starts:null, note:"Bengals' veteran WR"},
-  {name:"Michael Pittman Jr.", team:"IND", pos:"WR", yards:503, year:2020, games:null, starts:null, note:"Colts' rookie WR"}
+  {name:"Michael Pittman Jr.", team:"IND", pos:"WR", yards:503, year:2020, games:null, starts:null, note:"Colts' rookie WR"},
+
+  // ===== 2020 RB DEPTH ADDITIONS (source: Fox Sports 2020 regular season rushing stats) =====
+  {name:"Jonathan Taylor", team:"IND", pos:"RB", year:2020, yards:1169, games:15, starts:13, note:"Colts' rookie RB"},
+  {name:"David Montgomery", team:"CHI", pos:"RB", year:2020, yards:1070, games:15, starts:14, note:"Bears' RB"},
+  {name:"James Robinson", team:"JAX", pos:"RB", year:2020, yards:1070, games:14, starts:14, note:"Jaguars' undrafted rookie RB"},
+  {name:"Nick Chubb", team:"CLE", pos:"RB", year:2020, yards:1067, games:12, starts:12, note:"Browns' RB"},
+  {name:"Josh Jacobs", team:"LV", pos:"RB", year:2020, yards:1065, games:15, starts:15, note:"Raiders' RB"},
+  {name:"Melvin Gordon III", team:"DEN", pos:"RB", year:2020, yards:986, games:15, starts:10, note:"Broncos' RB, first year after Chargers"},
+  {name:"Ezekiel Elliott", team:"DAL", pos:"RB", year:2020, yards:979, games:15, starts:15, note:"Cowboys' RB"},
+  {name:"Ronald Jones II", team:"TB", pos:"RB", year:2020, yards:978, games:14, starts:13, note:"Buccaneers' RB"},
+  {name:"Kenyan Drake", team:"ARI", pos:"RB", year:2020, yards:955, games:15, starts:13, note:"Cardinals' RB that season"},
+  {name:"Alvin Kamara", team:"NO", pos:"RB", year:2020, yards:932, games:15, starts:10, note:"Saints' star RB"},
+  {name:"Miles Sanders", team:"PHI", pos:"RB", year:2020, yards:867, games:12, starts:11, note:"Eagles' RB"},
+  {name:"Kareem Hunt", team:"CLE", pos:"RB", year:2020, yards:841, games:16, starts:5, note:"Browns' RB"},
+  {name:"J.K. Dobbins", team:"BAL", pos:"RB", year:2020, yards:805, games:15, starts:1, note:"Ravens' rookie RB"},
+  {name:"Clyde Edwards-Helaire", team:"KC", pos:"RB", year:2020, yards:803, games:13, starts:13, note:"Chiefs' rookie RB"},
+  {name:"Antonio Gibson", team:"WAS", pos:"RB", year:2020, yards:795, games:14, starts:10, note:"Washington's rookie RB"},
+  {name:"Gus Edwards", team:"BAL", pos:"RB", year:2020, yards:723, games:16, starts:6, note:"Ravens' RB"},
+  {name:"James Conner", team:"ARI", pos:"RB", year:2020, yards:721, games:13, starts:11, note:"Cardinals' RB, first year after Pittsburgh"},
+  {name:"David Johnson", team:"HOU", pos:"RB", year:2020, yards:691, games:12, starts:12, note:"Texans' RB, first year after Arizona"},
+  {name:"Damien Harris", team:"NE", pos:"RB", year:2020, yards:691, games:10, starts:10, note:"Patriots' RB"},
+  {name:"Devin Singletary", team:"BUF", pos:"RB", year:2020, yards:687, games:16, starts:16, note:"Bills' RB"},
+
+  // ===== 2022 TE DEPTH ADDITIONS (source: PFF 2022 season-end TE rankings, cross-checked against StatMuse) =====
+  {name:"T.J. Hockenson", team:"MIN", pos:"TE", year:2022, yards:914, games:16, starts:15, note:"Vikings' TE, mid-season trade from Detroit"},
+  {name:"Mark Andrews", team:"BAL", pos:"TE", year:2022, yards:847, games:14, starts:14, note:"Ravens' TE, injury-limited season"},
+  {name:"Evan Engram", team:"JAX", pos:"TE", year:2022, yards:766, games:17, starts:17, note:"Jaguars' TE"},
+  {name:"George Kittle", team:"SF", pos:"TE", year:2022, yards:765, games:15, starts:14, note:"49ers' TE"},
+  {name:"Pat Freiermuth", team:"PIT", pos:"TE", year:2022, yards:732, games:15, starts:13, note:"Steelers' TE"},
+  {name:"Dallas Goedert", team:"PHI", pos:"TE", year:2022, yards:702, games:11, starts:11, note:"Eagles' TE, injury-limited season"},
+  {name:"Tyler Higbee", team:"LAR", pos:"TE", year:2022, yards:620, games:17, starts:17, note:"Rams' TE"},
+  {name:"Kyle Pitts", team:"ATL", pos:"TE", year:2022, yards:356, games:10, starts:10, note:"Falcons' TE, injury-limited season"},
+
+  // ===== 2023 TE DEPTH ADDITIONS (source: Fantasy Footballers 2023 season recap, cross-checked) =====
+  {name:"Sam LaPorta", team:"DET", pos:"TE", year:2023, yards:889, games:17, starts:17, note:"Lions' rookie TE, broke rookie TE reception record"},
+
+  // ===== 2024 TE DEPTH ADDITIONS (source: PFF 2024 season-end TE rankings) =====
+  {name:"Mark Andrews", team:"BAL", pos:"TE", year:2024, yards:761, games:14, starts:14, note:"Ravens' TE"},
+  {name:"Isaiah Likely", team:"BAL", pos:"TE", year:2024, yards:603, games:17, starts:8, note:"Ravens' TE"},
+  {name:"Jonnu Smith", team:"MIA", pos:"TE", year:2024, yards:884, games:17, starts:6, note:"Dolphins' TE, career season, Pro Bowl selection"},
+  {name:"T.J. Hockenson", team:"MIN", pos:"TE", year:2024, yards:519, games:11, starts:11, note:"Vikings' TE, missed early season recovering from injury"}
 ];
 
 const STAT_KIND = {RB:"Rushing Yards", WR:"Receiving Yards", TE:"Receiving Yards", QB:"Passing Yards"};
@@ -1778,6 +1823,7 @@ async function fetchLeaderboard(){
     bestRoundDiff: (row.game_state||{}).bestRoundDiff ?? null,
     equippedFlair: row.equipped_flair,
     gamesPlayed: (row.game_state||{}).gamesPlayed || 0,
+    totalScoreSum: (row.game_state||{}).totalScoreSum || 0,
     perfectGuesses: (row.game_state||{}).perfectGuesses || 0,
     achievementCount: ((row.game_state||{}).achievements||[]).length,
     streakCount: (row.game_state||{}).streakCount || 0,
@@ -1807,14 +1853,22 @@ async function pushWeeklyLeaderboardEntry(){
 async function fetchWeeklyLeaderboard(){
   const wk = getWeekKey();
   const { data, error } = await sb.from('profiles')
-    .select('username,bankroll,week_start_bankroll,week_key,equipped_flair,game_state')
+    .select('username,bankroll,week_start_bankroll,week_key,equipped_flair,best_game_total,game_state')
     .eq('week_key', wk)
     .limit(50);
   if(error || !data) return [];
   return data.map(row => ({
     username: row.username,
+    bankroll: Number(row.bankroll),
     weeklyGain: Math.round(Number(row.bankroll) - Number(row.week_start_bankroll)),
     equippedFlair: row.equipped_flair,
+    bestGameTotal: row.best_game_total,
+    bestRoundDiff: (row.game_state||{}).bestRoundDiff ?? null,
+    gamesPlayed: (row.game_state||{}).gamesPlayed || 0,
+    totalScoreSum: (row.game_state||{}).totalScoreSum || 0,
+    perfectGuesses: (row.game_state||{}).perfectGuesses || 0,
+    achievementCount: ((row.game_state||{}).achievements||[]).length,
+    streakCount: (row.game_state||{}).streakCount || 0,
     prestigeLevel: (row.game_state||{}).prestigeLevel || 0,
     isCreator: (row.game_state||{}).isCreator || false
   }));
@@ -2906,7 +2960,8 @@ const STAR_NAMES = new Set([
   "James Cook","Jonathan Taylor","Derrick Henry","Saquon Barkley","Christian McCaffrey","Bijan Robinson",
   "Puka Nacua","Jaxon Smith-Njigba","Amon-Ra St. Brown","Ja'Marr Chase","Justin Jefferson","CeeDee Lamb","A.J. Brown",
   "Trey McBride","George Kittle",
-  "Matthew Stafford","Jared Goff","Dak Prescott","Drake Maye","Sam Darnold","Lamar Jackson","Joe Burrow","Josh Allen"
+  "Matthew Stafford","Jared Goff","Dak Prescott","Drake Maye","Sam Darnold","Lamar Jackson","Joe Burrow","Josh Allen",
+  "Patrick Mahomes"
 ]);
 
 const oddsMap = {
@@ -3059,13 +3114,9 @@ function oddsText(n){ return (n>0?'+':'') + n; }
 
 function renderBettingScreen(){
   const L = currentTotalLines;
-  const avgLine = L.avg !== null
-    ? `Locked in for this 4-hour window based on your recent median (${Math.round(L.avg)} yds off) — refreshes every 4 hours, so a bad game on purpose won't loosen anything until the next window.`
-    : `No game history yet — these are starter lines. They'll start personalizing (every 4 hours) after your first game.`;
 
   document.getElementById('bettingDynamic').innerHTML = `
     <h3>Total Score — Under (sum of all 5 diffs)</h3>
-    <p class="muted" style="margin-top:-6px;">${avgLine}</p>
     <div class="bet-row">
       <label class="bet-option"><span><input type="radio" name="bet-total" value="comfortable"> Under ${L.comfortable} yds <span class="muted">(Comfortable)</span></span><span class="odds">${oddsText(oddsMap.total.comfortable)}</span></label>
       <label class="bet-option"><span><input type="radio" name="bet-total" value="sharp"> Under ${L.sharp} yds <span class="muted">(Sharp)</span></span><span class="odds">${oddsText(oddsMap.total.sharp)}</span></label>
@@ -3100,7 +3151,7 @@ function renderBettingScreen(){
     </div>
 
     <h3>Star Power <span class="muted" style="font-weight:400;">(pure luck of the draw)</span> <button type="button" class="info-icon-btn" onclick="showStarList()" aria-label="Which players count as stars">ⓘ</button></h3>
-    <p class="muted" style="margin-top:-6px;">86 of the 516 player-seasons belong to a league star (tap the ⓘ to see who). This is about who you're dealt, not how well you guess.</p>
+    <p class="muted" style="margin-top:-6px;">100 of the 549 player-seasons belong to a league star (tap the ⓘ to see who). This is about who you're dealt, not how well you guess.</p>
     <div class="bet-row">
       <label class="bet-option"><span><input type="radio" name="bet-starpower" value="yes"> At least 1 star gets drawn</span><span class="odds">${oddsText(oddsMap.starpower.yes)}</span></label>
       <label class="bet-option"><span><input type="radio" name="bet-starpower" value="no"> No stars get drawn</span><span class="odds">${oddsText(oddsMap.starpower.no)}</span></label>
@@ -3109,7 +3160,7 @@ function renderBettingScreen(){
     </div>
 
     <h3>Season Spread <span class="muted" style="font-weight:400;">(pure luck of the draw)</span></h3>
-    <p class="muted" style="margin-top:-6px;">516 player-seasons span six NFL years (2020-2025). Will your hand of 5 spread across most of them, or stay bunched up?</p>
+    <p class="muted" style="margin-top:-6px;">549 player-seasons span six NFL years (2020-2025). Will your hand of 5 spread across most of them, or stay bunched up?</p>
     <div class="bet-row">
       <label class="bet-option"><span><input type="radio" name="bet-yearmix" value="yes"> 4+ different years get drawn</span><span class="odds">${oddsText(oddsMap.yearmix.yes)}</span></label>
       <label class="bet-option"><span><input type="radio" name="bet-yearmix" value="no"> 3 or fewer different years</span><span class="odds">${oddsText(oddsMap.yearmix.no)}</span></label>
@@ -3839,6 +3890,7 @@ async function finishGame(){
   const bankrollBeforeThisChange = profile.bankroll;
   profile.bankroll += totalReturn; // add back winnings (+ returned stakes); losses were already deducted upfront
   profile.gamesPlayed += 1;
+  profile.totalScoreSum = (profile.totalScoreSum||0) + totalScore; // running sum so we can show a true average score, not just best-ever
   profile.gameWinStreak = netProfit > 0 ? (profile.gameWinStreak||0) + 1 : 0;
   if(!gameBoosted){
     profile.bestGameTotal = (profile.bestGameTotal === null || profile.bestGameTotal === undefined) ? totalScore : Math.min(profile.bestGameTotal, totalScore);
@@ -4641,6 +4693,9 @@ async function finishDuelGame(){
 // trip is needed to agree on the deck; everyone's copy of PLAYERS is
 // identical (it ships in this file), and the date is universal.
 const DAILY_COMPLETION_REWARD = 300; // flat, not skill-scaled — no betting on a deck everyone already knows
+let lastDailyRank = 0;
+let lastDailyBoardSize = 0;
+let lastDailyTotal = 0;
 
 function mulberry32(seed){
   return function(){
@@ -4762,6 +4817,9 @@ async function finishDailyChallenge(){
   const board = await fetchDailyLeaderboard(dateKey);
   const myRank = board.findIndex(r => r.username === profile.username) + 1;
   if(myRank > 0 && myRank <= 3) unlockAchievement('daily_top3');
+  lastDailyRank = myRank;
+  lastDailyBoardSize = board.length;
+  lastDailyTotal = totalScore;
 
   saveInBackground(saveProfile);
   updateBankrollDisplay();
@@ -4777,6 +4835,22 @@ async function finishDailyChallenge(){
   `;
   if(myRank === 1) celebrate(`🥇 #1 on today's Daily Challenge!<br>${totalScore} yds off`);
   show('screen-daily-result');
+}
+
+function shareDailyResults(){
+  const dateStr = todayUTC();
+  const emojiRow = guesses.map(g => g.diff <= 50 ? '🟩' : g.diff <= 150 ? '🟨' : '🟥').join('');
+  const rankLine = lastDailyRank > 0 ? `Rank: #${lastDailyRank} of ${lastDailyBoardSize}\n` : '';
+  const streakLine = profile.dailyStreak > 0 ? `🔥 ${profile.dailyStreak} day streak\n` : '';
+  const text = `📅 Sharp Yards Daily — ${dateStr}\n${emojiRow}  ${lastDailyTotal} yds off (5 rounds)\n${rankLine}${streakLine}Play today's 5: ${window.location.href}`;
+  const box = document.getElementById('dailyShareBox');
+  box.textContent = text;
+  box.classList.remove('hidden');
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>showToast('Copied to clipboard!')).catch(()=>showToast('Copy failed — text shown below', true));
+  } else {
+    showToast('Copy the text below manually');
+  }
 }
 
 function renderLeaderboard(){
@@ -4878,12 +4952,14 @@ function showLbInfo(evt, index, which){
   if(!e) return;
   const rank = getRank(e.bankroll||0);
   const flairDef = e.equippedFlair ? FLAIR_DEFS.find(f=>f.id===e.equippedFlair) : null;
+  const avgScore = (e.gamesPlayed > 0 && e.totalScoreSum) ? (e.totalScoreSum / e.gamesPlayed) : null;
   const rows = [
     ['Rank Tier', `${rank.icon} ${rank.name}`],
     ['Prestige', e.prestigeLevel > 0 ? `⭐ Level ${e.prestigeLevel}` : '—'],
     ['Creator', e.isCreator ? '🎖️ Yes' : '—'],
     ['Bankroll', fmtMoney(e.bankroll||0)],
     ['Games Played', e.gamesPlayed ?? '—'],
+    ['Average Score', avgScore !== null ? `${avgScore.toFixed(0)} yds off` : '—'],
     ['Best Game Total', e.bestGameTotal !== undefined && e.bestGameTotal !== null ? `${e.bestGameTotal} yds` : '—'],
     ['Best Single Round', e.bestRoundDiff !== undefined && e.bestRoundDiff !== null ? `${e.bestRoundDiff} yds` : '—'],
     ['Exact Guesses', e.perfectGuesses ?? 0],

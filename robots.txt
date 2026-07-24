@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://sharp-yards-nfl.netlify.app/sitemap.xml
